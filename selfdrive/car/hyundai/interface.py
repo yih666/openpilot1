@@ -28,7 +28,7 @@ class CarInterface(CarInterfaceBase):
     v_current_kph = current_speed * CV.MS_TO_KPH
 
     gas_max_bp = [0., 10., 20., 30., 40., 50., 70., 130.]
-    gas_max_v = [1.75, 1.64, 1.25, 1.03, 0.71, 0.53, 0.35, 0.21]
+    gas_max_v = [1.7, 1.64, 1.25, 1.03, 0.70, 0.45, 0.27, 0.21]
 
     return CarControllerParams.ACCEL_MIN, interp(v_current_kph, gas_max_bp, gas_max_v)
 
@@ -53,7 +53,7 @@ class CarInterface(CarInterfaceBase):
       if candidate in [CAR.GENESIS, CAR.GENESIS_G80, CAR.GENESIS_EQ900]:
           ret.lateralTuning.pid.kf = 0.00005
           ret.lateralTuning.pid.kpBP = [0., 10., 30.]
-          ret.lateralTuning.pid.kpV = [0.02, 0.04, 0.055]
+          ret.lateralTuning.pid.kpV = [0.02, 0.04, 0.052]
           ret.lateralTuning.pid.kiBP = [0., 30.]
           ret.lateralTuning.pid.kiV = [0.02, 0.03]
           ret.lateralTuning.pid.kdBP = [0.]
@@ -116,7 +116,7 @@ class CarInterface(CarInterfaceBase):
 	
     # longitudinal
     ret.longitudinalTuning.kpBP = [0., 5.*CV.KPH_TO_MS, 10.*CV.KPH_TO_MS, 20.*CV.KPH_TO_MS, 30.*CV.KPH_TO_MS, 40.*CV.KPH_TO_MS, 50.*CV.KPH_TO_MS, 130.*CV.KPH_TO_MS]
-    ret.longitudinalTuning.kpV = [1.45, 1.24, 0.96, 0.90, 0.78, 0.58, 0.41, 0.36]
+    ret.longitudinalTuning.kpV = [1.42, 1.24, 0.96, 0.90, 0.78, 0.58, 0.41, 0.36]
     ret.longitudinalTuning.kiBP = [0., 130. * CV.KPH_TO_MS]
     ret.longitudinalTuning.kiV = [0.08, 0.02]
     #ret.longitudinalTuning.kpBP = [0., 6., 10., 35.]
@@ -125,12 +125,12 @@ class CarInterface(CarInterfaceBase):
     #ret.longitudinalTuning.kiV = [.01, .01]
 
     ret.longitudinalActuatorDelayLowerBound = 0.3
-    ret.longitudinalActuatorDelayUpperBound = 0.5
+    ret.longitudinalActuatorDelayUpperBound = 0.3
 
     ret.stopAccel = 0.0
     ret.stoppingDecelRate = 0.25  # brake_travel/s while trying to stop
-    ret.vEgoStopping = 0.5
-    ret.vEgoStarting = 0.5  # needs to be >= vEgoStopping to avoid state transition oscillation
+    ret.vEgoStopping = 0.55
+    ret.vEgoStarting = 0.55  # needs to be >= vEgoStopping to avoid state transition oscillation
 
     # genesis
     if candidate == CAR.GENESIS:
