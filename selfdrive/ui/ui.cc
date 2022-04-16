@@ -1,16 +1,17 @@
 #include "selfdrive/ui/ui.h"
 
+#include <string>
 #include <cassert>
 #include <cmath>
 
 #include <QtConcurrent>
-
 #include "common/transformations/orientation.hpp"
 #include "selfdrive/common/params.h"
 #include "selfdrive/common/swaglog.h"
 #include "selfdrive/common/util.h"
 #include "selfdrive/common/watchdog.h"
 #include "selfdrive/hardware/hw.h"
+#include "selfdrive/ui/qt/qt_window.h"
 
 #define BACKLIGHT_DT 0.05
 #define BACKLIGHT_TS 10.00
@@ -46,7 +47,7 @@ static int get_path_length_idx(const cereal::ModelDataV2::XYZTData::Reader &line
 
 static void update_leads(UIState *s, const cereal::RadarState::Reader &radar_state, const cereal::ModelDataV2::XYZTData::Reader &line) {
   for (int i = 0; i < 2; ++i) {
-    auto lead_data = (i == 0) ? radar_state.getLeadOne() : radar_state.getLeadTwo();
+    auto lead_data = radar_state.getLeadOne();
     if (lead_data.getStatus()) {
       float z = line.getZ()[get_path_length_idx(line, lead_data.getDRel())];
       calib_frame_to_full_frame(s, lead_data.getDRel(), -lead_data.getYRel(), z + 1.22, &s->scene.lead_vertices[i]);
@@ -111,7 +112,26 @@ static void update_sockets(UIState *s) {
 static void update_state(UIState *s) {
   SubMaster &sm = *(s->sm);
   UIScene &scene = s->scene;
-
+  
+  if (sm.updated("carState")){
+    scene.car_state = sm["carState"].getCarState();
+    auto cs_data = sm["carState"].getCarState();
+    scene.angleSteers = cs_data.getSteeringAngleDeg();
+  }
+  
+  if (scene.started && sm.updated("controlsState")) {
+    scene.controls_state = sm["controlsState"].getControlsState();
+    scene.lateralControlSelect = scene.controls_state.getLateralControlSelect();
+    if (scene.lateralControlSelect == 0) {
+      scene.output_scale = scene.controls_state.getLateralControlState().getPidState().getOutput();
+    } else if (scene.lateralControlSelect == 1) {
+      scene.output_scale = scene.controls_state.getLateralControlState().getIndiState().getOutput();
+    } else if (scene.lateralControlSelect == 2) {
+      scene.output_scale = scene.controls_state.getLateralControlState().getLqrState().getOutput();
+    } else if (scene.lateralControlSelect == 3) {
+      scene.output_scale = scene.controls_state.getLateralControlState().getTorqueState().getOutput();
+    }  
+  }
   if (sm.updated("liveCalibration")) {
     auto rpy_list = sm["liveCalibration"].getLiveCalibration().getRpyCalib();
     Eigen::Vector3d rpy;
@@ -191,13 +211,22 @@ static void update_state(UIState *s) {
     scene.light_sensor = std::clamp<float>(1.0 - (ev / max_ev), 0.0, 1.0);
   }
   scene.started = sm["deviceState"].getDeviceState().getStarted() && scene.ignition;
+  if (sm.updated("lateralPlan")) {
+    auto data = sm["lateralPlan"].getLateralPlan();
+
+    scene.lateralPlan.dynamicLaneProfileStatus = data.getDynamicLaneProfile();
+  }
 }
 
 void ui_update_params(UIState *s) {
   Params params;
   s->scene.is_metric = params.getBool("IsMetric");
   s->show_debug = params.getBool("ShowDebugUI");
-  s->lat_control = std::string(Params().get("LateralControl"));
+  s->show_gear = params.getBool("ShowCgearUI");//기어
+  s->show_bsd = params.getBool("ShowBsdUI");//bsd
+  s->show_tpms = params.getBool("ShowTpmsUI");
+  s->show_brake = params.getBool("ShowBrakeUI");
+  s->show_lcr = params.getBool("ShowLcrUI");
 }
 
 void UIState::updateStatus() {
@@ -223,6 +252,7 @@ void UIState::updateStatus() {
       scene.started_frame = sm->frame;
       scene.end_to_end = Params().getBool("EndToEndToggle");
       wide_camera = Hardware::TICI() ? Params().getBool("EnableWideCamera") : false;
+      scene.dynamic_lane_profile = std::stoi(Params().get("DynamicLaneProfile"));
     }
     started_prev = scene.started;
     emit offroadTransition(!scene.started);
@@ -234,7 +264,7 @@ UIState::UIState(QObject *parent) : QObject(parent) {
     "modelV2", "controlsState", "liveCalibration", "radarState", "deviceState", "roadCameraState",
     "pandaStates", "carParams", "driverMonitoringState", "sensorEvents", "carState", "liveLocationKalman",
     "wideRoadCameraState",
-    "gpsLocationExternal", "carControl", "liveParameters", "roadLimitSpeed",
+    "gpsLocationExternal", "carControl", "liveParameters", "lateralPlan", "roadLimitSpeed",
   });
 
   Params params;

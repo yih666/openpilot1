@@ -8,8 +8,10 @@ from selfdrive.controls.lib.drive_helpers import CONTROL_N, MPC_COST_LAT, LAT_MP
 from selfdrive.controls.lib.lane_planner import LanePlanner, TRAJECTORY_SIZE
 from selfdrive.controls.lib.desire_helper import DesireHelper, AUTO_LCA_START_TIME
 import cereal.messaging as messaging
+from common.params import Params
 from cereal import log
 
+LaneChangeState = log.LateralPlan.LaneChangeState
 
 class LateralPlanner:
   def __init__(self, CP, use_lanelines=True, wide_camera=False):
@@ -26,16 +28,47 @@ class LateralPlanner:
     self.t_idxs = np.arange(TRAJECTORY_SIZE)
     self.y_pts = np.zeros(TRAJECTORY_SIZE)
 
+    self.second = 0.0
+    
     self.lat_mpc = LateralMpc()
     self.reset_mpc(np.zeros(4))
+    
+    self.dynamic_lane_profile = int(Params().get("DynamicLaneProfile", encoding="utf8"))
+    self.dynamic_lane_profile_status = False
+    self.dynamic_lane_profile_status_buffer = False
+    
+    self.second = 0.0
 
   def reset_mpc(self, x0=np.zeros(4)):
     self.x0 = x0
     self.lat_mpc.reset(x0=self.x0)
 
   def update(self, sm):
+    try:
+      if CP.lateralTuning.which() == 'pid':
+        self.output_scale = sm['controlsState'].lateralControlState.pidState.output
+      elif CP.lateralTuning.which() == 'indi':
+        self.output_scale = sm['controlsState'].lateralControlState.indiState.output
+      elif CP.lateralTuning.which() == 'lqr':
+        self.output_scale = sm['controlsState'].lateralControlState.lqrState.output
+      elif CP.lateralTuning.which() == 'torque':
+        self.output_scale = sm['controlsState'].lateralControlState.torqueState.output  
+    except:
+      pass
+    
+    self.second += DT_MDL
+    if self.second > 1.0:
+      self.use_lanelines = not Params().get_bool("EndToEndToggle")
+      self.dynamic_lane_profile = int(Params().get("DynamicLaneProfile", encoding="utf8"))
+      self.second = 0.0
+      
+    lane_change_set_timer = int(Params().get("AutoLaneChangeTimer", encoding="utf8"))
+    lane_change_auto_timer = 0.0 if lane_change_set_timer == 0 else 0.1 if lane_change_set_timer == 1 else 0.5 if lane_change_set_timer == 2 \
+      else 1.0 if lane_change_set_timer == 3 else 1.5 if lane_change_set_timer == 4 else 2.0 
+      
     v_ego = sm['carState'].vEgo
     measured_curvature = sm['controlsState'].curvature
+    mpc_param = np.array([v_ego, CAR_ROTATION_RADIUS])
 
     # Parse model predictions
     md = sm['modelV2']
@@ -58,17 +91,21 @@ class LateralPlanner:
 
     steer_rate_cost = ntune_common_get('steerRateCost')
 
-    # Calculate final driving path and set MPC costs
-    if self.use_lanelines:
-      d_path_xyz = self.LP.get_d_path(v_ego, self.t_idxs, self.path_xyz)
-      self.lat_mpc.set_weights(MPC_COST_LAT.PATH, MPC_COST_LAT.HEADING, steer_rate_cost)
-    else:
+    self.d_path_w_lines_xyz = self.LP.get_d_path(v_ego, self.t_idxs, self.path_xyz)
+    if self.get_dynamic_lane_profile():
+      # laneless logic
       d_path_xyz = self.path_xyz
       path_cost = np.clip(abs(self.path_xyz[0, 1] / self.path_xyz_stds[0, 1]), 0.5, 1.0) * MPC_COST_LAT.PATH
       # Heading cost is useful at low speed, otherwise end of plan can be off-heading
-      heading_cost = interp(v_ego, [5.0, 10.0], [MPC_COST_LAT.HEADING, 0.0])
-      self.lat_mpc.set_weights(path_cost, heading_cost, steer_rate_cost)
-
+      heading_cost = interp(v_ego, [5.0, 10.0], [MPC_COST_LAT.HEADING, MPC_COST_LAT.LANELESS_HEADING_MIN])
+      self.lat_mpc.set_weights(path_cost, heading_cost, steer_rate_cost, mpc_param)
+      self.dynamic_lane_profile_status = True
+    else:
+      # laneline logic
+      d_path_xyz = self.d_path_w_lines_xyz
+      self.lat_mpc.set_weights(MPC_COST_LAT.PATH, MPC_COST_LAT.HEADING, steer_rate_cost, mpc_param)
+      self.dynamic_lane_profile_status = False
+      
     d_path_xyz[:, 1] += ntune_common_get('pathOffset')
 
     y_pts = np.interp(v_ego * self.t_idxs[:LAT_MPC_N + 1], np.linalg.norm(d_path_xyz, axis=1), d_path_xyz[:, 1])
@@ -78,9 +115,8 @@ class LateralPlanner:
     assert len(y_pts) == LAT_MPC_N + 1
     assert len(heading_pts) == LAT_MPC_N + 1
     # self.x0[4] = v_ego
-    p = np.array([v_ego, CAR_ROTATION_RADIUS])
     self.lat_mpc.run(self.x0,
-                     p,
+                     mpc_param,
                      y_pts,
                      heading_pts)
     # init state for next
@@ -100,6 +136,14 @@ class LateralPlanner:
       self.solution_invalid_cnt += 1
     else:
       self.solution_invalid_cnt = 0
+      
+  def get_dynamic_lane_profile(self):
+    if self.dynamic_lane_profile == 1:
+      return True
+    if self.dynamic_lane_profile == 0:
+      return False
+    elif self.dynamic_lane_profile == 2:
+      return False   
 
   def publish(self, sm, pm):
     plan_solution_valid = self.solution_invalid_cnt < 2
@@ -128,4 +172,6 @@ class LateralPlanner:
     lateralPlan.autoLaneChangeEnabled = self.DH.auto_lane_change_enabled
     lateralPlan.autoLaneChangeTimer = int(AUTO_LCA_START_TIME) - int(self.DH.auto_lane_change_timer)
 
+    lateralPlan.dynamicLaneProfile = bool(self.dynamic_lane_profile_status)
+    
     pm.send('lateralPlan', plan_send)

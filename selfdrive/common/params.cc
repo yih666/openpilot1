@@ -181,7 +181,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"Offroad_UpdateFailed", CLEAR_ON_MANAGER_START},
 
     {"SelectedCar", PERSISTENT},
-    {"LateralControl", PERSISTENT},
+    {"LateralControlSelect", PERSISTENT},
     {"UseClusterSpeed", PERSISTENT},
     {"LongControlEnabled", PERSISTENT},
     {"MadModeEnabled", PERSISTENT},
@@ -189,6 +189,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"IsLdwsCar", PERSISTENT},
     {"LaneChangeEnabled", PERSISTENT},
     {"AutoLaneChangeEnabled", PERSISTENT},
+    {"AutoLaneChangeTimer", PERSISTENT},
 
     {"SccSmootherState", PERSISTENT},
     {"SccSmootherSlowOnCurves", PERSISTENT},
@@ -197,11 +198,14 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"NewRadarInterface", PERSISTENT},
     {"DisableOpFcw", PERSISTENT},
     {"ShowDebugUI", PERSISTENT},
-
+    {"ShowBsdUI", PERSISTENT},
+    {"ShowTpmsUI", PERSISTENT},
     {"KeepSteeringTurnSignals", PERSISTENT},
     {"HapticFeedbackWhenSpeedCamera", PERSISTENT},
-
+    {"PutPrebuilt", PERSISTENT},
+    {"DynamicLaneProfile", PERSISTENT},
     {"SoftRestartTriggered", CLEAR_ON_MANAGER_START},
+    {"AutoAscc", PERSISTENT},
 };
 
 } // namespace

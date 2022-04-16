@@ -32,3 +32,42 @@ private:
   void refresh();
   void getUserKeys(const QString &username);
 };
+
+class AutoLaneChangeTimer : public AbstractControl {
+  Q_OBJECT
+
+public:
+  AutoLaneChangeTimer();
+
+private:
+  QPushButton btnplus;
+  QPushButton btnminus;
+  QLabel label;
+  Params params;
+
+  void refresh();
+};
+// LateralControlSelect
+class LateralControlSelect : public AbstractControl {
+  Q_OBJECT
+
+public:
+  LateralControlSelect();
+
+private:
+  QPushButton btnplus;
+  QPushButton btnminus;
+  QLabel label;
+
+  void refresh();
+};
+class GitHash : public AbstractControl {
+  Q_OBJECT
+public:
+  GitHash();
+
+private:
+  QLabel local_hash;
+  QLabel remote_hash;
+  Params params;
+};

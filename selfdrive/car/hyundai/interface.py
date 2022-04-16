@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
+from typing import List
 
 from cereal import car
 from common.numpy_fast import interp
+from panda import Panda
 from common.conversions import Conversions as CV
-from selfdrive.car.hyundai.values import CAR, Buttons, CarControllerParams
+from selfdrive.car.hyundai.values import CAR, DBC, Buttons, CarControllerParams, FEATURES
+from selfdrive.car.hyundai.radar_interface import RADAR_START_ADDR
 from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint, get_safety_config
 from selfdrive.car.interfaces import CarInterfaceBase
 from common.params import Params
@@ -24,8 +27,8 @@ class CarInterface(CarInterfaceBase):
 
     v_current_kph = current_speed * CV.MS_TO_KPH
 
-    gas_max_bp = [10., 20., 50., 70., 130., 150.]
-    gas_max_v = [1.5, 1.1, 0.65, 0.47, 0.16, 0.1]
+    gas_max_bp = [0., 10., 20., 30., 40., 50., 70., 130.]
+    gas_max_v = [1.75, 1.64, 1.25, 1.03, 0.71, 0.53, 0.35, 0.21]
 
     return CarControllerParams.ACCEL_MIN, interp(v_current_kph, gas_max_bp, gas_max_v)
 
@@ -33,78 +36,107 @@ class CarInterface(CarInterfaceBase):
   def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=[], disable_radar=False):  # pylint: disable=dangerous-default-value
     ret = CarInterfaceBase.get_std_params(candidate, fingerprint)
 
-    ret.openpilotLongitudinalControl = Params().get_bool('LongControlEnabled')
+    ret.openpilotLongitudinalControl = Params().get_bool('LongControlEnabled') or disable_radar
 
     ret.carName = "hyundai"
     ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.hyundaiLegacy, 0)]
+    ret.radarOffCan = RADAR_START_ADDR not in fingerprint[1] or DBC[ret.carFingerprint]["radar"] is None
 
-    tire_stiffness_factor = 1.
+    tire_stiffness_factor = 0.85
     ret.maxSteeringAngleDeg = 1000.
-
+	
     ret.steerFaultMaxAngle = 85
     ret.steerFaultMaxFrames = 90
 
-    # lateral
-    lateral_control = Params().get("LateralControl", encoding='utf-8')
-    if lateral_control == 'TORQUE':
-      ret.lateralTuning.init('torque')
-      ret.lateralTuning.torque.useSteeringAngle = True
-
-      MAX_TORQUE = 2.5
-      ret.lateralTuning.torque.kp = 3.5 / MAX_TORQUE
-      ret.lateralTuning.torque.kf = 0.75 / MAX_TORQUE
-      ret.lateralTuning.torque.friction = 0.06
-    elif lateral_control == 'INDI':
-      ret.lateralTuning.init('indi')
-      ret.lateralTuning.indi.innerLoopGainBP = [0.]
-      ret.lateralTuning.indi.innerLoopGainV = [3.3]
-      ret.lateralTuning.indi.outerLoopGainBP = [0.]
-      ret.lateralTuning.indi.outerLoopGainV = [2.8]
-      ret.lateralTuning.indi.timeConstantBP = [0.]
-      ret.lateralTuning.indi.timeConstantV = [1.4]
-      ret.lateralTuning.indi.actuatorEffectivenessBP = [0.]
-      ret.lateralTuning.indi.actuatorEffectivenessV = [1.8]
-    else:
-      ret.lateralTuning.init('lqr')
-
-      ret.lateralTuning.lqr.scale = 1600.
-      ret.lateralTuning.lqr.ki = 0.01
-      ret.lateralTuning.lqr.dcGain = 0.0027
-
-      ret.lateralTuning.lqr.a = [0., 1., -0.22619643, 1.21822268]
-      ret.lateralTuning.lqr.b = [-1.92006585e-04, 3.95603032e-05]
-      ret.lateralTuning.lqr.c = [1., 0.]
-      ret.lateralTuning.lqr.k = [-110., 451.]
-      ret.lateralTuning.lqr.l = [0.33, 0.318]
-
-
-
-    ret.steerRatio = 16.5
-    ret.steerActuatorDelay = 0.2
-    ret.steerRateCost = 0.35
-
-    ret.steerLimitTimer = 2.5
-
+    # -------------PID
+    if Params().get("LateralControlSelect", encoding='utf8') == "0":
+      if candidate in [CAR.GENESIS, CAR.GENESIS_G80, CAR.GENESIS_EQ900]:
+          ret.lateralTuning.pid.kf = 0.00005
+          ret.lateralTuning.pid.kpBP = [0., 10., 30.]
+          ret.lateralTuning.pid.kpV = [0.02, 0.04, 0.055]
+          ret.lateralTuning.pid.kiBP = [0., 30.]
+          ret.lateralTuning.pid.kiV = [0.02, 0.03]
+          ret.lateralTuning.pid.kdBP = [0.]
+          ret.lateralTuning.pid.kdV = [1.0]
+          ret.lateralTuning.pid.newKfTuned = True
+          
+          ret.steerActuatorDelay = 0.
+          ret.steerRateCost = 0.4
+          ret.steerLimitTimer = 2.5
+          ret.steerRatio = 15.3
+    
+    # ---------------INDI
+    elif Params().get("LateralControlSelect", encoding='utf8') == "1":
+      if candidate in [CAR.GENESIS, CAR.GENESIS_EQ900]:
+          ret.lateralTuning.init('indi')
+          ret.lateralTuning.indi.innerLoopGainBP = [0.]
+          ret.lateralTuning.indi.innerLoopGainV = [3.5]
+          ret.lateralTuning.indi.outerLoopGainBP = [0.]
+          ret.lateralTuning.indi.outerLoopGainV = [2.0]
+          ret.lateralTuning.indi.timeConstantBP = [0.]
+          ret.lateralTuning.indi.timeConstantV = [1.4]
+          ret.lateralTuning.indi.actuatorEffectivenessBP = [0.]
+          ret.lateralTuning.indi.actuatorEffectivenessV = [1.3]
+          
+          ret.steerActuatorDelay = 0.3
+          ret.steerRateCost = 0.5
+          ret.steerLimitTimer = 2.0
+          ret.steerRatio = 15.5
+  
+    # ---------------LQR
+    elif Params().get("LateralControlSelect", encoding='utf8') == "2":
+      if candidate in [CAR.GENESIS, CAR.GENESIS_G80, CAR.GENESIS_EQ900]:
+          ret.lateralTuning.init('lqr')
+          ret.lateralTuning.lqr.scale = 1600.
+          ret.lateralTuning.lqr.ki = 0.01
+          ret.lateralTuning.lqr.dcGain = 0.0027
+          ret.lateralTuning.lqr.a = [0., 1., -0.22619643, 1.21822268]
+          ret.lateralTuning.lqr.b = [-1.92006585e-04, 3.95603032e-05]
+          ret.lateralTuning.lqr.c = [1., 0.]
+          ret.lateralTuning.lqr.k = [-110, 451]
+          ret.lateralTuning.lqr.l = [0.33, 0.318]
+		
+          ret.steerRatio = 15.5
+          ret.steerActuatorDelay = 0.15
+          ret.steerLimitTimer = 2.5
+          ret.steerRateCost = 0.35
+    
+    # --------------Torque
+    elif Params().get("LateralControlSelect", encoding='utf8') == "3":
+      if candidate in [CAR.GENESIS, CAR.GENESIS_G80, CAR.GENESIS_EQ900]:
+          ret.lateralTuning.init('torque')
+          ret.lateralTuning.torque.useSteeringAngle = True
+          ret.lateralTuning.torque.kp = 2.0
+          ret.lateralTuning.torque.kf = 0.05
+          ret.lateralTuning.torque.friction = 0.01
+          ret.lateralTuning.torque.ki = 0.05
+          ret.lateralTuning.torque.kd = 0.7
+          ret.lateralTuning.torque.friction = 0.06
+		
+	
     # longitudinal
-    ret.longitudinalTuning.kpBP = [0., 5.*CV.KPH_TO_MS, 10.*CV.KPH_TO_MS, 20.*CV.KPH_TO_MS, 130.*CV.KPH_TO_MS]
-    ret.longitudinalTuning.kpV = [1.25, 1.1, 1.0, 0.85, 0.48]
-    ret.longitudinalTuning.kiBP = [0., 130. * CV.KPH_TO_MS]
-    ret.longitudinalTuning.kiV = [0.08, 0.03]
-    ret.longitudinalActuatorDelayLowerBound = 0.5
+    #ret.longitudinalTuning.kpBP = [0., 5.*CV.KPH_TO_MS, 10.*CV.KPH_TO_MS, 20.*CV.KPH_TO_MS, 30.*CV.KPH_TO_MS, 40.*CV.KPH_TO_MS, 50.*CV.KPH_TO_MS, 130.*CV.KPH_TO_MS]
+    #ret.longitudinalTuning.kpV = [1.5, 1.24, 0.96, 0.90, 0.78, 0.58, 0.41, 0.36]
+    #ret.longitudinalTuning.kiBP = [0., 130. * CV.KPH_TO_MS]
+    #ret.longitudinalTuning.kiV = [0.08, 0.02]
+    ret.longitudinalTuning.kpBP = [0., 6., 10., 35.]
+    ret.longitudinalTuning.kpV = [1., .8, 0.5, .2]
+    ret.longitudinalTuning.kiBP = [0., 30.]
+    ret.longitudinalTuning.kiV = [.01, .01]
+
+    ret.longitudinalActuatorDelayLowerBound = 0.3
     ret.longitudinalActuatorDelayUpperBound = 0.5
 
-    ret.stopAccel = -2.0
-    ret.stoppingDecelRate = 0.5  # brake_travel/s while trying to stop
+    ret.stopAccel = 0.0
+    ret.stoppingDecelRate = 0.25  # brake_travel/s while trying to stop
     ret.vEgoStopping = 0.5
-    ret.vEgoStarting = 0.5
+    ret.vEgoStarting = 0.5  # needs to be >= vEgoStopping to avoid state transition oscillation
 
     # genesis
     if candidate == CAR.GENESIS:
       ret.mass = 1900. + STD_CARGO_KG
       ret.wheelbase = 3.01
       ret.centerToFront = ret.wheelbase * 0.4
-      ret.maxSteeringAngleDeg = 90.
-      ret.steerFaultMaxAngle = 0
     elif candidate == CAR.GENESIS_G70:
       ret.mass = 1640. + STD_CARGO_KG
       ret.wheelbase = 2.84
@@ -188,21 +220,13 @@ class CarInterface(CarInterfaceBase):
       ret.centerToFront = ret.wheelbase * 0.4
     elif candidate in [CAR.GRANDEUR_IG, CAR.GRANDEUR_IG_HEV]:
       tire_stiffness_factor = 0.8
-      ret.mass = 1570. + STD_CARGO_KG
+      ret.mass = 1640. + STD_CARGO_KG
       ret.wheelbase = 2.845
       ret.centerToFront = ret.wheelbase * 0.385
-      ret.steerRatio = 16.
-
-      #ret.lateralTuning.init('pid')
-      #ret.lateralTuning.pid.kf = 0.00005
-
-      #ret.lateralTuning.pid.kpBP, ret.lateralTuning.pid.kpV = [[0.], [0.2]]
-      #ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kiV = [[0.], [0.03]]
-      #ret.lateralTuning.pid.kdBP, ret.lateralTuning.pid.kdV = [[0.], [0.1]]
-
+      ret.steerRatio = 17.
     elif candidate in [CAR.GRANDEUR_IG_FL, CAR.GRANDEUR_IG_FL_HEV]:
       tire_stiffness_factor = 0.8
-      ret.mass = 1600. + STD_CARGO_KG
+      ret.mass = 1725. + STD_CARGO_KG
       ret.wheelbase = 2.885
       ret.centerToFront = ret.wheelbase * 0.385
       ret.steerRatio = 17.
@@ -256,22 +280,17 @@ class CarInterface(CarInterfaceBase):
       ret.wheelbase = 2.7
       tire_stiffness_factor = 0.7
       ret.centerToFront = ret.wheelbase * 0.4
-    elif candidate == CAR.SELTOS:
-      ret.mass = 1310. + STD_CARGO_KG
-      ret.wheelbase = 2.6
-      tire_stiffness_factor = 0.7
-      ret.centerToFront = ret.wheelbase * 0.4
-    elif candidate == CAR.MOHAVE:
-      ret.mass = 2285. + STD_CARGO_KG
-      ret.wheelbase = 2.895
-      ret.centerToFront = ret.wheelbase * 0.5
-      tire_stiffness_factor = 0.8
     elif candidate in [CAR.K7, CAR.K7_HEV]:
       tire_stiffness_factor = 0.7
       ret.mass = 1650. + STD_CARGO_KG
       ret.wheelbase = 2.855
       ret.centerToFront = ret.wheelbase * 0.4
-      ret.steerRatio = 17.25
+      ret.steerRatio = 17.5
+    elif candidate == CAR.SELTOS:
+      ret.mass = 1310. + STD_CARGO_KG
+      ret.wheelbase = 2.6
+      tire_stiffness_factor = 0.7
+      ret.centerToFront = ret.wheelbase * 0.4
     elif candidate == CAR.K9:
       ret.mass = 2005. + STD_CARGO_KG
       ret.wheelbase = 3.15
@@ -311,7 +330,7 @@ class CarInterface(CarInterfaceBase):
     ret.enableAutoHold = 1151 in fingerprint[0]
 
     # ignore CAN2 address if L-CAN on the same BUS
-    ret.mdpsBus = 1 if 593 in fingerprint[1] and 1296 not in fingerprint[1] else 0
+    ret.mdpsBus = 1 if 593 in fingerprint[1] and 1296 not in fingerprint[1] else 0    
     ret.sasBus = 1 if 688 in fingerprint[1] and 1296 not in fingerprint[1] else 0
     ret.sccBus = 0 if 1056 in fingerprint[0] else 1 if 1056 in fingerprint[1] and 1296 not in fingerprint[1] \
                                                                      else 2 if 1056 in fingerprint[2] else -1
@@ -331,13 +350,17 @@ class CarInterface(CarInterfaceBase):
       ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.hyundaiCommunity, 0)]
     return ret
 
-  def update(self, c, can_strings):
+  def _update(self, c: car.CarControl) -> car.CarState:
+    pass
+
+  def update(self, c: car.CarControl, can_strings: List[bytes]) -> car.CarState:
     self.cp.update_strings(can_strings)
     self.cp2.update_strings(can_strings)
     self.cp_cam.update_strings(can_strings)
 
     ret = self.CS.update(self.cp, self.cp2, self.cp_cam)
     ret.canValid = self.cp.can_valid and self.cp2.can_valid and self.cp_cam.can_valid
+    ret.canTimeout = any(cp.bus_timeout for cp in self.can_parsers if cp is not None)
 
     if self.CP.pcmCruise and not self.CC.scc_live:
       self.CP.pcmCruise = False

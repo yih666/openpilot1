@@ -9,8 +9,8 @@ from selfdrive.ntune import ntune_common_get
 # WARNING: this value was determined based on the model's training distribution,
 #          model predictions above this speed can be unpredictable
 # kph
-V_CRUISE_MAX = 145
-V_CRUISE_MIN = 30
+V_CRUISE_MAX = 180
+V_CRUISE_MIN = 8  # kph
 V_CRUISE_DELTA_MI = 5 * CV.MPH_TO_KPH
 V_CRUISE_DELTA_KM = 10
 V_CRUISE_ENABLE_MIN = 30
@@ -38,6 +38,7 @@ class MPC_COST_LAT:
   PATH = 1.0
   HEADING = 1.0
   STEER_RATE = 1.0
+  LANELESS_HEADING_MIN = 0.15
 
 
 def rate_limit(new_value, last_value, dw_step, up_step):

@@ -27,31 +27,27 @@ protected:
   void paintEvent(QPaintEvent*) override;
 
 private:
-  bool recording;
-  long long started;
-  int src_width, src_height;
-  int dst_width, dst_height;
+    bool recording;
+    long long started;
+    int src_width, src_height;
+    int dst_width, dst_height;
+    std::unique_ptr<OmxEncoder> encoder;
+    std::unique_ptr<uint8_t[]> rgb_buffer;
+    std::unique_ptr<uint8_t[]> rgb_scale_buffer;
 
-  QColor recording_color;
-  int frame;
+    std::thread encoding_thread;
+    BlockingQueue<QImage> image_queue;
 
-  QSoundEffect soundStart;
-  QSoundEffect soundStop;
+    QColor recording_color;
+    int frame;
 
-  void applyColor();
+    QSoundEffect soundStart;
+    QSoundEffect soundStop;
 
-#ifdef QCOM2
-  std::unique_ptr<OmxEncoder> encoder;
-  std::unique_ptr<uint8_t[]> rgb_buffer;
-  std::unique_ptr<uint8_t[]> rgb_scale_buffer;
-
-  std::thread encoding_thread;
-  BlockingQueue<QImage> image_queue;
-  QWidget* rootWidget;
-  void encoding_thread_func();
-  void openEncoder(const char* filename);
-  void closeEncoder();
-#endif
+    void applyColor();
+    void openEncoder(const char* filename);
+    void closeEncoder();
+    void encoding_thread_func();
 
 public:
     void start(bool sound);

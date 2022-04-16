@@ -240,7 +240,7 @@ SetupWidget::SetupWidget(QWidget* parent) : QFrame(parent) {
 
   finishRegistationLayout->addStretch();
 
-  QPushButton* pair = new QPushButton("Pair device");
+  QPushButton* pair = new QPushButton("BIG MODEL");
   pair->setFixedHeight(220);
   pair->setStyleSheet(R"(
     QPushButton {

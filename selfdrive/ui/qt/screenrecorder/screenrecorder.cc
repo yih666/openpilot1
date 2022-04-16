@@ -21,42 +21,44 @@ static long long milliseconds(void) {
     return (((long long)tv.tv_sec)*1000)+(tv.tv_usec/1000);
 }
 
-ScreenRecoder::ScreenRecoder(QWidget *parent) : QPushButton(parent)
-#ifdef QCOM2
-, image_queue(30)
-#endif
-{
+ScreenRecoder::ScreenRecoder(QWidget *parent) : QPushButton(parent), image_queue(30) {
 
-  recording = false;
-  started = 0;
-  frame = 0;
+    recording = false;
+    started = 0;
+    frame = 0;
 
-  const int size = 190;
-  setFixedSize(size, size);
-  setFocusPolicy(Qt::NoFocus);
-  connect(this, SIGNAL(pressed()),this,SLOT(btnPressed()));
-  connect(this, SIGNAL(released()),this,SLOT(btnReleased()));
+    const int size = 190;
+    setFixedSize(size, size);
+    setFocusPolicy(Qt::NoFocus);
+    connect(this, SIGNAL(pressed()),this,SLOT(btnPressed()));
+    connect(this, SIGNAL(released()),this,SLOT(btnReleased()));
 
-  std::string path = "/data/media/0/videos";
-  src_width = 2160;
-  src_height = 1080;
+    const int bitrate = Hardware::TICI() ? 4*1024*1024 : 3*1024*1024;
 
-  dst_height = 720;
-  dst_width = src_width * dst_height / src_height;
-  if(dst_width % 2 != 0)
-      dst_width += 1;
+    std::string path = "/data/media/0/videos";
+    src_width = 2160;
+    src_height = 1080;
 
-#ifdef QCOM2
-  rgb_buffer = std::make_unique<uint8_t[]>(src_width*src_height*4);
-  rgb_scale_buffer = std::make_unique<uint8_t[]>(dst_width*dst_height*4);
-  encoder = std::make_unique<OmxEncoder>(path.c_str(), dst_width, dst_height, UI_FREQ, 2*1024*1024, false, false);
-#endif
+    if(Hardware::EON()) {
+        path = "/storage/emulated/0/videos";
+        src_width = 1920;
+    }
 
-  soundStart.setSource(QUrl::fromLocalFile("../assets/sounds/start_record.wav"));
-  soundStop.setSource(QUrl::fromLocalFile("../assets/sounds/stop_record.wav"));
+    dst_height = 720;
+    dst_width = src_width * dst_height / src_height;
+    if(dst_width % 2 != 0)
+        dst_width += 1;
 
-  soundStart.setVolume(0.5f);
-  soundStop.setVolume(0.5f);
+    rgb_buffer = std::make_unique<uint8_t[]>(src_width*src_height*4);
+    rgb_scale_buffer = std::make_unique<uint8_t[]>(dst_width*dst_height*4);
+
+    encoder = std::make_unique<OmxEncoder>(path.c_str(), dst_width, dst_height, UI_FREQ, bitrate, false, false);
+
+    soundStart.setSource(QUrl::fromLocalFile("../assets/sounds/start_record.wav"));
+    soundStop.setSource(QUrl::fromLocalFile("../assets/sounds/stop_record.wav"));
+
+    soundStart.setVolume(0.5f);
+    soundStop.setVolume(0.5f);
 }
 
 ScreenRecoder::~ScreenRecoder() {
@@ -102,7 +104,6 @@ void ScreenRecoder::btnReleased(void) {
 void ScreenRecoder::btnPressed(void) {
 }
 
-#ifdef QCOM2
 void ScreenRecoder::openEncoder(const char* filename) {
     encoder->encoder_open(filename);
 }
@@ -111,7 +112,6 @@ void ScreenRecoder::closeEncoder() {
   if(encoder)
       encoder->encoder_close();
 }
-#endif
 
 void ScreenRecoder::toggle() {
 
@@ -131,30 +131,11 @@ void ScreenRecoder::start(bool sound) {
   struct tm tm = *localtime(&t);
   snprintf(filename,sizeof(filename),"%04d%02d%02d-%02d%02d%02d.mp4", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
 
+  openEncoder(filename);
   recording = true;
   frame = 0;
-#ifdef QCOM2
 
-  QWidget* widget = this;
-  while (widget->parentWidget() != Q_NULLPTR)
-    widget = widget->parentWidget();
-
-  rootWidget = widget;
-
-  openEncoder(filename);
   encoding_thread = std::thread([=] { encoding_thread_func(); });
-#else
-  char cmd[128] = "";
-  const char* videos_dir = "/storage/emulated/0/videos";
-
-  struct stat st = {0};
-  if (stat(videos_dir, &st) == -1) {
-    mkdir(videos_dir,0700);
-  }
-
-  snprintf(cmd,sizeof(cmd),"screenrecord --size 1280x720 --bit-rate 2000000 %s/%s&", videos_dir, filename);
-  system(cmd);
-#endif
 
   update();
 
@@ -164,7 +145,6 @@ void ScreenRecoder::start(bool sound) {
       soundStart.play();
 }
 
-#ifdef QCOM2
 void ScreenRecoder::encoding_thread_func() {
 
   while(recording && encoder) {
@@ -177,52 +157,48 @@ void ScreenRecoder::encoding_thread_func() {
             image.width(), image.height(),
             rgb_scale_buffer.get(), dst_width*4,
             dst_width, dst_height,
-            libyuv::kFilterLinear);
+            libyuv::kFilterBilinear);
 
       encoder->encode_frame_rgba(rgb_scale_buffer.get(), dst_width, dst_height, (uint64_t)nanos_since_boot());
     }
   }
 }
-#endif
 
 void ScreenRecoder::stop(bool sound) {
 
   if(recording) {
+    closeEncoder();
     recording = false;
     update();
 
-#ifdef QCOM2
-  closeEncoder();
-  image_queue.clear();
-  if(encoding_thread.joinable())
-    encoding_thread.join();
-#else
-  system("killall -SIGINT screenrecord");
-#endif
-
-  if(sound)
+    if(sound)
       soundStop.play();
+
+    image_queue.clear();
+
+    if(encoding_thread.joinable())
+      encoding_thread.join();
   }
 }
 
 void ScreenRecoder::update_screen() {
 
-if(recording) {
+  if(recording && encoder) {
 
-  if(milliseconds() - started > 1000*60*3) {
-    stop(false);
-    start(false);
-    return;
-  }
+    if(milliseconds() - started > 1000*60*3) {
+      stop(false);
+      start(false);
+      return;
+    }
 
-  applyColor();
+    applyColor();
 
-#ifdef QCOM2
-  if(rootWidget != nullptr) {
-    QPixmap pixmap = rootWidget->grab();
+    QWidget* widget = this;
+    while (widget->parentWidget() != Q_NULLPTR)
+      widget = widget->parentWidget();
+
+    QPixmap pixmap = widget->grab();
     image_queue.push(pixmap.toImage());
-  }
-#endif
   }
 
   frame++;

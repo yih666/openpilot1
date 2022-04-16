@@ -9,11 +9,12 @@ ERROR_RATE_FRAME = 5
 class LatControlPID(LatControl):
   def __init__(self, CP, CI):
     super().__init__(CP, CI)
-    self.pid = PIDController((CP.lateralTuning.pid.kpBP, CP.lateralTuning.pid.kpV),
-                            (CP.lateralTuning.pid.kiBP, CP.lateralTuning.pid.kiV),
-                            k_f=CP.lateralTuning.pid.kf,
-                            k_d=(CP.lateralTuning.pid.kdBP, CP.lateralTuning.pid.kdV),
-                            pos_limit=1.0, neg_limit=-1.0)
+    self.pid = PIDController ((CP.lateralTuning.pid.kpBP, CP.lateralTuning.pid.kpV),
+                              (CP.lateralTuning.pid.kiBP, CP.lateralTuning.pid.kiV),
+                              (CP.lateralTuning.pid.kdBP, CP.lateralTuning.pid.kdV),
+                              k_f=CP.lateralTuning.pid.kf, pos_limit=1.0, neg_limit=-1.0,
+                              derivative_period=0.1)
+    self.new_kf_tuned = CP.lateralTuning.pid.newKfTuned
     self.get_steer_feedforward = CI.get_steer_feedforward_function()
 
     self.errors = []

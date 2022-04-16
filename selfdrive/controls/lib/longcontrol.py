@@ -5,6 +5,7 @@ from selfdrive.controls.lib.pid import PIDController
 from selfdrive.controls.lib.drive_helpers import CONTROL_N
 from selfdrive.modeld.constants import T_IDXS
 from selfdrive.ntune import ntune_scc_get
+from common.conversions import Conversions as CV
 
 LongCtrlState = car.CarControl.Actuators.LongControlState
 
@@ -55,8 +56,10 @@ class LongControl():
   def __init__(self, CP):
     self.long_control_state = LongCtrlState.off  # initialized to off
     self.pid = PIDController((CP.longitudinalTuning.kpBP, CP.longitudinalTuning.kpV),
-                             (CP.longitudinalTuning.kiBP, CP.longitudinalTuning.kiV),
-                             k_f = CP.longitudinalTuning.kf, rate=1 / DT_CTRL)
+                            (CP.longitudinalTuning.kiBP, CP.longitudinalTuning.kiV),
+                            (CP.longitudinalTuning.kdBP, CP.longitudinalTuning.kdV),
+                            k_f = CP.longitudinalTuning.kf, rate=1 / DT_CTRL,
+                            derivative_period=0.5)
     self.v_pid = 0.0
     self.last_output_accel = 0.0
 
@@ -123,8 +126,8 @@ class LongControl():
     elif self.long_control_state == LongCtrlState.stopping:
       # Keep applying brakes until the car is stopped
       if not CS.standstill or output_accel > CP.stopAccel:
-        output_accel -= CP.stoppingDecelRate * DT_CTRL * \
-                        interp(output_accel, [CP.stopAccel, CP.stopAccel/2., CP.stopAccel/4., 0.], [0.3, 0.65, 1., 3.])
+        output_accel -= CP.stoppingDecelRate * DT_CTRL
+
       output_accel = clip(output_accel, accel_limits[0], accel_limits[1])
       self.reset(CS.vEgo)
 

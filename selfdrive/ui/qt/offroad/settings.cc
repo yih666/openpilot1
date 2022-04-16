@@ -26,6 +26,9 @@
 #include "selfdrive/ui/qt/util.h"
 #include "selfdrive/ui/qt/qt_window.h"
 
+#include <QProcess> // opkr
+#include <QDateTime> // opkr
+#include <QTimer> // opkr
 #include <QComboBox>
 #include <QAbstractItemView>
 #include <QScroller>
@@ -37,38 +40,38 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
   std::vector<std::tuple<QString, QString, QString, QString>> toggles{
     {
       "OpenpilotEnabledToggle",
-      "Enable openpilot",
-      "Use the openpilot system for adaptive cruise control and lane keep driver assistance. Your attention is required at all times to use this feature. Changing this setting takes effect when the car is powered off.",
+      "오픈파일럿 사용",
+      "어댑티브 크루즈 컨트롤 및 차선 유지 지원을 위해 오픈파일럿 시스템을 사용하십시오. 이 기능을 사용하려면 항상 주의를 기울여야 합니다. 이 설정을 변경하는 것은 자동차의 전원이 꺼졌을 때 적용됩니다.",
       "../assets/offroad/icon_openpilot.png",
     },
     {
       "IsLdwEnabled",
-      "Enable Lane Departure Warnings",
-      "Receive alerts to steer back into the lane when your vehicle drifts over a detected lane line without a turn signal activated while driving over 31 mph (50 km/h).",
+      "차선이탈 경보 사용",
+      "50km/h이상의 속도로 주행하는 동안 방향 지시등이 활성화되지 않은 상태에서 차량이 감지된 차선 위를 넘어갈 경우 원래 차선으로 다시 방향을 전환하도록 경고를 보냅니다.",
       "../assets/offroad/icon_warning.png",
     },
     {
       "IsRHD",
-      "Enable Right-Hand Drive",
-      "Allow openpilot to obey left-hand traffic conventions and perform driver monitoring on right driver seat.",
+      "우핸들 운전방식 사용",
+      "오픈파일럿이 좌측 교통 규칙을 준수하도록 허용하고 우측 운전석에서 운전자 모니터링을 수행하십시오.",
       "../assets/offroad/icon_openpilot_mirrored.png",
     },
     {
       "IsMetric",
-      "Use Metric System",
-      "Display speed in km/h instead of mph.",
+      "미터법 사용",
+      "mi/h 대신 km/h 단위로 속도를 표시합니다.",
       "../assets/offroad/icon_metric.png",
     },
     {
       "RecordFront",
-      "Record and Upload Driver Camera",
-      "Upload data from the driver facing camera and help improve the driver monitoring algorithm.",
+      "운전자 영상 녹화",
+      "운전자 모니터링 카메라에서 데이터를 업로드하고 운전자 모니터링 알고리즘을 개선하십시오.",
       "../assets/offroad/icon_monitoring.png",
     },
     {
       "EndToEndToggle",
-      "\U0001f96c Disable use of lanelines (Alpha) \U0001f96c",
-      "In this mode openpilot will ignore lanelines and just drive how it thinks a human would.",
+      "\U0001f96c 차선이 없을 때 사용 버전 알파 \U0001f96c",
+      "차선이 없는 곳에서 사람과 같이 운전을 하는 것을 목표함니다.",
       "../assets/offroad/icon_road.png",
     },
     {
@@ -114,13 +117,14 @@ DevicePanel::DevicePanel(SettingsWindow *parent) : ListWidget(parent) {
   setSpacing(50);
   addItem(new LabelControl("Dongle ID", getDongleId().value_or("N/A")));
   addItem(new LabelControl("Serial", params.get("HardwareSerial").c_str()));
-
-  QHBoxLayout *reset_layout = new QHBoxLayout();
+  
+  
+  // soft reboot button
+  QHBoxLayout *reset_layout = new QHBoxLayout(); //새로운 버튼 추가를 위한 레이아웃 변수 reset
   reset_layout->setSpacing(30);
 
-  // reset calibration button
-  QPushButton *restart_openpilot_btn = new QPushButton("Soft restart");
-  restart_openpilot_btn->setStyleSheet("height: 120px;border-radius: 15px;background-color: #393939;");
+  QPushButton *restart_openpilot_btn = new QPushButton("소프트 재부팅");
+  restart_openpilot_btn->setStyleSheet("height: 120px;border-radius: 15px;background-color: #7300a4;");
   reset_layout->addWidget(restart_openpilot_btn);
   QObject::connect(restart_openpilot_btn, &QPushButton::released, [=]() {
     emit closeSettings();
@@ -130,11 +134,11 @@ DevicePanel::DevicePanel(SettingsWindow *parent) : ListWidget(parent) {
   });
 
   // reset calibration button
-  QPushButton *reset_calib_btn = new QPushButton("Reset Calibration");
-  reset_calib_btn->setStyleSheet("height: 120px;border-radius: 15px;background-color: #393939;");
+  QPushButton *reset_calib_btn = new QPushButton("캘리 및 학습값 초기화");
+  reset_calib_btn->setStyleSheet("height: 120px;border-radius: 15px;background-color: #008299;");
   reset_layout->addWidget(reset_calib_btn);
   QObject::connect(reset_calib_btn, &QPushButton::released, [=]() {
-    if (ConfirmationDialog::confirm("Are you sure you want to reset calibration and live params?", this)) {
+    if (ConfirmationDialog::confirm("캘리브레이션 및 학습값을 초기화 할까요?", this)) {
       Params().remove("CalibrationParams");
       Params().remove("LiveParameters");
       emit closeSettings();
@@ -146,26 +150,52 @@ DevicePanel::DevicePanel(SettingsWindow *parent) : ListWidget(parent) {
 
   addItem(reset_layout);
 
+ // power buttons
+  QHBoxLayout *power_layout = new QHBoxLayout();
+  power_layout->setSpacing(30);
+
+  QPushButton *reboot_btn = new QPushButton("재부팅");
+  reboot_btn->setObjectName("reboot_btn");
+  power_layout->addWidget(reboot_btn);
+  QObject::connect(reboot_btn, &QPushButton::clicked, this, &DevicePanel::reboot);
+
+  QPushButton *poweroff_btn = new QPushButton("종료");
+  poweroff_btn->setObjectName("poweroff_btn");
+  power_layout->addWidget(poweroff_btn);
+  QObject::connect(poweroff_btn, &QPushButton::clicked, this, &DevicePanel::poweroff);
+
+  setStyleSheet(R"(
+    QPushButton {
+      height: 120px;
+      border-radius: 15px;
+    }
+    #reboot_btn { background-color: #00bfff; }
+    #reboot_btn:pressed { background-color: #0000ff; }
+    #poweroff_btn { background-color: #E22C2C; }
+    #poweroff_btn:pressed { background-color: #FF2424; }
+  )");
+  addItem(power_layout);
+    
   // offroad-only buttons
 
-  auto dcamBtn = new ButtonControl("Driver Camera", "PREVIEW",
-                                   "Preview the driver facing camera to help optimize device mounting position for best driver monitoring experience. (vehicle must be off)");
+  auto dcamBtn = new ButtonControl("운전자 모니터링 미리보기", "실행",
+                                   "운전자 모니터링 카메라를 미리보고 최적의 장착위치를 찾아보세요.");
   connect(dcamBtn, &ButtonControl::clicked, [=]() { emit showDriverView(); });
   addItem(dcamBtn);
 
-  auto resetCalibBtn = new ButtonControl("Reset Calibration", "RESET", " ");
+  auto resetCalibBtn = new ButtonControl("캘리브레이션 리셋", "실행", " ");
   connect(resetCalibBtn, &ButtonControl::showDescription, this, &DevicePanel::updateCalibDescription);
   connect(resetCalibBtn, &ButtonControl::clicked, [&]() {
-    if (ConfirmationDialog::confirm("Are you sure you want to reset calibration?", this)) {
+    if (ConfirmationDialog::confirm("캘리브레이션 리셋을 실행하시겠습니까?", this)) {
       params.remove("CalibrationParams");
     }
   });
   addItem(resetCalibBtn);
 
   if (!params.getBool("Passive")) {
-    auto retrainingBtn = new ButtonControl("Review Training Guide", "REVIEW", "Review the rules, features, and limitations of openpilot");
+    auto retrainingBtn = new ButtonControl("트레이닝 가이드", "실행", "Review the rules, features, and limitations of openpilot");
     connect(retrainingBtn, &ButtonControl::clicked, [=]() {
-      if (ConfirmationDialog::confirm("Are you sure you want to review the training guide?", this)) {
+      if (ConfirmationDialog::confirm("트레이닝 가이드를 실행하시겠습니까?", this)) {
         emit reviewTrainingGuide();
       }
     });
@@ -173,7 +203,7 @@ DevicePanel::DevicePanel(SettingsWindow *parent) : ListWidget(parent) {
   }
 
   if (Hardware::TICI()) {
-    auto regulatoryBtn = new ButtonControl("Regulatory", "VIEW", "");
+    auto regulatoryBtn = new ButtonControl("주의사항", "보기", "");
     connect(regulatoryBtn, &ButtonControl::clicked, [=]() {
       const std::string txt = util::read_file("../assets/offroad/fcc.html");
       RichTextDialog::alert(QString::fromStdString(txt), this);
@@ -186,38 +216,12 @@ DevicePanel::DevicePanel(SettingsWindow *parent) : ListWidget(parent) {
       btn->setEnabled(offroad);
     }
   });*/
-
-  // power buttons
-  QHBoxLayout *power_layout = new QHBoxLayout();
-  power_layout->setSpacing(30);
-
-  QPushButton *reboot_btn = new QPushButton("Reboot");
-  reboot_btn->setObjectName("reboot_btn");
-  power_layout->addWidget(reboot_btn);
-  QObject::connect(reboot_btn, &QPushButton::clicked, this, &DevicePanel::reboot);
-
-  QPushButton *poweroff_btn = new QPushButton("Power Off");
-  poweroff_btn->setObjectName("poweroff_btn");
-  power_layout->addWidget(poweroff_btn);
-  QObject::connect(poweroff_btn, &QPushButton::clicked, this, &DevicePanel::poweroff);
-
-  if (Hardware::TICI()) {
-    connect(uiState(), &UIState::offroadTransition, poweroff_btn, &QPushButton::setVisible);
-  }
-
-  setStyleSheet(R"(
-    #reboot_btn { height: 120px; border-radius: 15px; background-color: #393939; }
-    #reboot_btn:pressed { background-color: #4a4a4a; }
-    #poweroff_btn { height: 120px; border-radius: 15px; background-color: #E22C2C; }
-    #poweroff_btn:pressed { background-color: #FF2424; }
-  )");
-  addItem(power_layout);
 }
 
 void DevicePanel::updateCalibDescription() {
   QString desc =
-      "openpilot requires the device to be mounted within 4° left or right and "
-      "within 5° up or 8° down. openpilot is continuously calibrating, resetting is rarely required.";
+      "오픈파일럿은 좌우로 4° 위로 5° 아래로 8도 를 보정합니다."
+      "그 이상의 경우 보정이 필요합니다.";
   std::string calib_bytes = Params().get("CalibrationParams");
   if (!calib_bytes.empty()) {
     try {
@@ -227,9 +231,9 @@ void DevicePanel::updateCalibDescription() {
       if (calib.getCalStatus() != 0) {
         double pitch = calib.getRpyCalib()[1] * (180 / M_PI);
         double yaw = calib.getRpyCalib()[2] * (180 / M_PI);
-        desc += QString(" Your device is pointed %1° %2 and %3° %4.")
-                    .arg(QString::number(std::abs(pitch), 'g', 1), pitch > 0 ? "down" : "up",
-                         QString::number(std::abs(yaw), 'g', 1), yaw > 0 ? "left" : "right");
+        desc += QString(" 장치 장착상태는 %1° %2 그리고 %3° %4.")
+                    .arg(QString::number(std::abs(pitch), 'g', 1), pitch > 0 ? "아래로" : "위로",
+                         QString::number(std::abs(yaw), 'g', 1), yaw > 0 ? "좌측으로" : "우측으로");
       }
     } catch (kj::Exception) {
       qInfo() << "invalid CalibrationParams";
@@ -240,27 +244,27 @@ void DevicePanel::updateCalibDescription() {
 
 void DevicePanel::reboot() {
   if (!uiState()->engaged()) {
-    if (ConfirmationDialog::confirm("Are you sure you want to reboot?", this)) {
+    if (ConfirmationDialog::confirm("재부팅 하시겠습니까?", this)) {
       // Check engaged again in case it changed while the dialog was open
       if (!uiState()->engaged()) {
         Params().putBool("DoReboot", true);
       }
     }
   } else {
-    ConfirmationDialog::alert("Disengage to Reboot", this);
+    ConfirmationDialog::alert("인게이지 해제후에 시도하세요!", this);
   }
 }
 
 void DevicePanel::poweroff() {
   if (!uiState()->engaged()) {
-    if (ConfirmationDialog::confirm("Are you sure you want to power off?", this)) {
+    if (ConfirmationDialog::confirm("종료하시겠습니까?", this)) {
       // Check engaged again in case it changed while the dialog was open
       if (!uiState()->engaged()) {
         Params().putBool("DoShutdown", true);
       }
     }
   } else {
-    ConfirmationDialog::alert("Disengage to Power Off", this);
+    ConfirmationDialog::alert("인게이지 해제후에 시도하세요!", this);
   }
 }
 
@@ -282,9 +286,9 @@ SoftwarePanel::SoftwarePanel(QWidget* parent) : ListWidget(parent) {
   });
 
 
-  auto uninstallBtn = new ButtonControl("Uninstall " + getBrand(), "UNINSTALL");
+  auto uninstallBtn = new ButtonControl("오픈파일럿 삭제 " + getBrand(), "삭제");
   connect(uninstallBtn, &ButtonControl::clicked, [&]() {
-    if (ConfirmationDialog::confirm("Are you sure you want to uninstall?", this)) {
+    if (ConfirmationDialog::confirm("오픈파일럿을 삭제하시겠습니까?", this)) {
       params.putBool("DoUninstall", true);
     }
   });
@@ -298,8 +302,8 @@ SoftwarePanel::SoftwarePanel(QWidget* parent) : ListWidget(parent) {
   fs_watch = new QFileSystemWatcher(this);
   QObject::connect(fs_watch, &QFileSystemWatcher::fileChanged, [=](const QString path) {
     if (path.contains("UpdateFailedCount") && std::atoi(params.get("UpdateFailedCount").c_str()) > 0) {
-      lastUpdateLbl->setText("failed to fetch update");
-      updateBtn->setText("CHECK");
+      lastUpdateLbl->setText("브랜치 업데이트 실패");
+      updateBtn->setText("확인중");
       updateBtn->setEnabled(true);
     } else if (path.contains("LastUpdateTime")) {
       updateLabels();
@@ -320,7 +324,7 @@ void SoftwarePanel::updateLabels() {
 
   versionLbl->setText(getBrandVersion());
   lastUpdateLbl->setText(lastUpdate);
-  updateBtn->setText("CHECK");
+  updateBtn->setText("확인중");
   updateBtn->setEnabled(true);
   gitBranchLbl->setText(QString::fromStdString(params.get("GitBranch")));
   gitCommitLbl->setText(QString::fromStdString(params.get("GitCommit")).left(10));
@@ -329,26 +333,39 @@ void SoftwarePanel::updateLabels() {
 
 C2NetworkPanel::C2NetworkPanel(QWidget *parent) : QWidget(parent) {
   QVBoxLayout *layout = new QVBoxLayout(this);
-  layout->setContentsMargins(50, 0, 50, 0);
+  layout->setContentsMargins(20, 0, 20, 0); // 공간조절
 
   ListWidget *list = new ListWidget();
   list->setSpacing(30);
   // wifi + tethering buttons
-#ifdef QCOM
-  auto wifiBtn = new ButtonControl("Wi-Fi Settings", "OPEN");
+#ifdef QCOM 
+  auto wifiBtn = new ButtonControl("\U0001f4f6 WiFi 설정", "열기");
   QObject::connect(wifiBtn, &ButtonControl::clicked, [=]() { HardwareEon::launch_wifi(); });
   list->addItem(wifiBtn);
 
-  auto tetheringBtn = new ButtonControl("Tethering Settings", "OPEN");
+  auto tetheringBtn = new ButtonControl("\U0001f4f6 테더링 설정", "열기");
   QObject::connect(tetheringBtn, &ButtonControl::clicked, [=]() { HardwareEon::launch_tethering(); });
   list->addItem(tetheringBtn);
 #endif
   ipaddress = new LabelControl("IP Address", "");
-  list->addItem(ipaddress);
+  list->addItem(ipaddress);  
 
   // SSH key management
   list->addItem(new SshToggle());
   list->addItem(new SshControl());
+  list->addItem(horizontal_line());
+  // add
+  const char* gitpull = "sh /data/openpilot/gitpull.sh";
+  auto gitpullbtn = new ButtonControl("GitPull", "실행");
+  QObject::connect(gitpullbtn, &ButtonControl::clicked, [=]() {
+    if (ConfirmationDialog::confirm("GitPull 실행하시겠습니까?", this)){
+      std::system(gitpull);
+      QTimer::singleShot(1000, []() { Hardware::reboot(); });
+    }
+  });
+  list->addItem(gitpullbtn);
+  list->addItem(horizontal_line());
+
   layout->addWidget(list);
   layout->addStretch(1);
 }
@@ -378,6 +395,52 @@ QWidget *network_panel(QWidget *parent) {
 #else
   return new Networking(parent);
 #endif
+}
+//VIP menu
+VIPPanel::VIPPanel(QWidget* parent) : QWidget(parent) {
+  QVBoxLayout *layout = new QVBoxLayout(this);
+  layout->addWidget(new LabelControl("UI설정", ""));
+  layout->addWidget(new ParamControl("ShowDebugUI",
+                                            "디버그 내용 보기",
+                                            "가감속 등 디버그 내용을 화면에 띄웁니다.",
+                                            "../assets/offroad/icon_shell.png",
+                                            this));
+  layout->addWidget(new ParamControl("ShowCgearUI",
+                                            "주행기어단수 보기",
+                                            "기어레버 위치와 기어단수를 볼수 있습니다..",
+                                            "../assets/offroad/icon_shell.png"
+                                            ));
+  layout->addWidget(new ParamControl("ShowBsdUI",
+                                            "후측방감지기 보기",
+                                            "후측방 감지기 이미지를 볼수 있습니다..",
+                                            "../assets/offroad/icon_shell.png"
+                                            ));
+  layout->addWidget(new ParamControl("ShowTpmsUI",
+                                            "타이어공기압 정보 보기",
+                                            "타이어공기압 를 볼수 있습니다..",
+                                            "../assets/offroad/icon_shell.png"
+                                            ));
+  layout->addWidget(horizontal_line());
+  layout->addWidget(new LabelControl("제어메뉴", ""));
+  layout->addWidget(new LateralControlSelect());
+  layout->addWidget(new AutoLaneChangeTimer());
+  layout->addWidget(new ParamControl("AutoAscc",
+                                            "Ascc auto set",
+                                            "Ascc auto set 적용",
+                                            "../assets/offroad/icon_road.png",
+                                            this));											
+  layout->addWidget(new ParamControl("KeepSteeringTurnSignals",
+                                            "상시조향 옵션.",
+                                            "방향지시등 작동시 상시조향 가능",
+                                            "../assets/offroad/icon_openpilot.png",
+                                            this));
+  layout->addWidget(new ParamControl("HapticFeedbackWhenSpeedCamera",
+                                            "NDA 카메라 과속시 핸들진동 선택",
+                                            "NDA 카메라 과속시 핸들진동 선택",
+                                            "../assets/offroad/icon_openpilot.png",
+                                            this));
+  
+  layout->addWidget(horizontal_line());
 }
 
 static QStringList get_list(const char* path)
@@ -418,7 +481,7 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
   )");
 
   // close button
-  QPushButton *close_btn = new QPushButton("← Back");
+  QPushButton *close_btn = new QPushButton("← 닫기");
   close_btn->setStyleSheet(R"(
     QPushButton {
       font-size: 50px;
@@ -447,11 +510,12 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
   QObject::connect(device, &DevicePanel::closeSettings, this, &SettingsWindow::closeSettings);
 
   QList<QPair<QString, QWidget *>> panels = {
-    {"Device", device},
-    {"Network", network_panel(this)},
-    {"Toggles", new TogglesPanel(this)},
-    {"Software", new SoftwarePanel(this)},
-    {"Community", new CommunityPanel(this)},
+    {"장치", device},
+    {"VIP메뉴", new VIPPanel(this)},
+    {"네트워크", network_panel(this)},
+    {"토글메뉴", new TogglesPanel(this)},
+    {"소프트웨어", new SoftwarePanel(this)},
+    {"커뮤니티", new CommunityPanel(this)},
   };
 
 #ifdef ENABLE_MAPS
@@ -540,9 +604,12 @@ CommunityPanel::CommunityPanel(QWidget* parent) : QWidget(parent) {
 
   QPushButton* selectCarBtn = new QPushButton(selected.length() ? selected : "Select your car");
   selectCarBtn->setObjectName("selectCarBtn");
-  //selectCarBtn->setStyleSheet("margin-right: 30px;");
+  selectCarBtn->setStyleSheet("margin-right: 30px;");
   //selectCarBtn->setFixedSize(350, 100);
   connect(selectCarBtn, &QPushButton::clicked, [=]() { main_layout->setCurrentWidget(selectCar); });
+  vlayout->addSpacing(10);
+  vlayout->addWidget(selectCarBtn, 0, Qt::AlignRight);
+  vlayout->addSpacing(10);
 
   homeWidget = new QWidget(this);
   QVBoxLayout* toggleLayout = new QVBoxLayout(homeWidget);
@@ -550,6 +617,7 @@ CommunityPanel::CommunityPanel(QWidget* parent) : QWidget(parent) {
 
   ScrollView *scroller = new ScrollView(homeWidget, this);
   scroller->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+  vlayout->addWidget(scroller, 1);
 
   main_layout->addWidget(homeScreen);
 
@@ -563,48 +631,13 @@ CommunityPanel::CommunityPanel(QWidget* parent) : QWidget(parent) {
   });
   main_layout->addWidget(selectCar);
 
-
-  QString lateral_control = QString::fromStdString(Params().get("LateralControl"));
-  if(lateral_control.length() == 0)
-    lateral_control = "LQR";
-
-  QPushButton* lateralControlBtn = new QPushButton(lateral_control);
-  lateralControlBtn->setObjectName("lateralControlBtn");
-  //lateralControlBtn->setStyleSheet("margin-right: 30px;");
-  //lateralControlBtn->setFixedSize(350, 100);
-  connect(lateralControlBtn, &QPushButton::clicked, [=]() { main_layout->setCurrentWidget(lateralControl); });
-
-
-  lateralControl = new LateralControl(this);
-  connect(lateralControl, &LateralControl::backPress, [=]() { main_layout->setCurrentWidget(homeScreen); });
-  connect(lateralControl, &LateralControl::selected, [=]() {
-
-     QString lateral_control = QString::fromStdString(Params().get("LateralControl"));
-     if(lateral_control.length() == 0)
-       lateral_control = "LQR";
-     lateralControlBtn->setText(lateral_control);
-     main_layout->setCurrentWidget(homeScreen);
-  });
-  main_layout->addWidget(lateralControl);
-
-  QHBoxLayout* layoutBtn = new QHBoxLayout(homeWidget);
-
-  layoutBtn->addWidget(lateralControlBtn);
-  layoutBtn->addSpacing(10);
-  layoutBtn->addWidget(selectCarBtn);
-
-  vlayout->addSpacing(10);
-  vlayout->addLayout(layoutBtn, 0);
-  vlayout->addSpacing(10);
-  vlayout->addWidget(scroller, 1);
-
   QPalette pal = palette();
   pal.setColor(QPalette::Background, QColor(0x29, 0x29, 0x29));
   setAutoFillBackground(true);
   setPalette(pal);
 
   setStyleSheet(R"(
-    #back_btn, #selectCarBtn, #lateralControlBtn {
+    #back_btn, #selectCarBtn {
       font-size: 50px;
       margin: 0px;
       padding: 20px;
@@ -616,71 +649,66 @@ CommunityPanel::CommunityPanel(QWidget* parent) : QWidget(parent) {
   )");
 
   QList<ParamControl*> toggles;
+  toggles.append(new ParamControl("PutPrebuilt", 
+                                           "Smart Prebuilt 실행 ",
+                                           "Prebuilt 파일을 생성하며 부팅속도를 향상시킵니다.",
+                                            "../assets/offroad/icon_shell.png",
+                                            this));
 
   toggles.append(new ParamControl("UseClusterSpeed",
-                                            "Use Cluster Speed",
-                                            "Use cluster speed instead of wheel speed.",
+                                            "계기판 속도 사용",
+                                            "휠스피드 센서 속도를 사용시 오프.",
                                             "../assets/offroad/icon_road.png",
                                             this));
 
   toggles.append(new ParamControl("LongControlEnabled",
-                                            "Enable HKG Long Control",
-                                            "warnings: it is beta, be careful!! Openpilot will control the speed of your car",
+                                            "HKG 롱컨트롤 사용",
+                                            "N 롱컨트롤 기능 사용. 오픈파일럿이 속도를 조절합니다. 주의 하시길 바랍니다.",
                                             "../assets/offroad/icon_road.png",
                                             this));
 
   toggles.append(new ParamControl("MadModeEnabled",
-                                            "Enable HKG MAD mode",
-                                            "Openpilot will engage when turn cruise control on",
+                                            "HKG MAD 모드 ",
+                                            "HKG 매드모드 사용. 가감속의 사용 하지 않아도 핸들 조향을 사용합니다.",
                                             "../assets/offroad/icon_openpilot.png",
                                             this));
 
-  toggles.append(new ParamControl("IsLdwsCar",
+  /*toggles.append(new ParamControl("IsLdwsCar",
                                             "LDWS",
                                             "If your car only supports LDWS, turn it on.",
                                             "../assets/offroad/icon_openpilot.png",
-                                            this));
+                                            this));*/
 
   toggles.append(new ParamControl("LaneChangeEnabled",
-                                            "Enable Lane Change Assist",
-                                            "Perform assisted lane changes with openpilot by checking your surroundings for safety, activating the turn signal and gently nudging the steering wheel towards your desired lane. openpilot is not capable of checking if a lane change is safe. You must continuously observe your surroundings to use this feature.",
+                                            "차로 변경 옵션 사용",
+                                            "차로 변경 자동 옵션 사용.",
                                             "../assets/offroad/icon_road.png",
                                             this));
 
   toggles.append(new ParamControl("AutoLaneChangeEnabled",
-                                            "Enable Auto Lane Change(Nudgeless)",
-                                            "warnings: it is beta, be careful!!",
+                                            "차로변경의 수동/자동 옵션",
+                                            "자동 차로 변경. 사용에 주의 하십시오",
                                             "../assets/offroad/icon_road.png",
                                             this));
 
   toggles.append(new ParamControl("SccSmootherSlowOnCurves",
-                                            "Enable Slow On Curves",
-                                            "",
+                                            "커브 감속 사용",
+                                            "SCC 설정 시 곡률에 따른 속도 감속 기능을 사용",
                                             "../assets/offroad/icon_road.png",
                                             this));
 
   toggles.append(new ParamControl("SccSmootherSyncGasPressed",
-                                            "Sync set speed on gas pressed",
+                                            "가속 속도 동기화",
                                             "",
                                             "../assets/offroad/icon_road.png",
                                             this));
 
-  toggles.append(new ParamControl("StockNaviDecelEnabled",
+  /*toggles.append(new ParamControl("StockNaviDecelEnabled",
                                             "Stock Navi based deceleration",
                                             "Use the stock navi based deceleration for longcontrol",
                                             "../assets/offroad/icon_road.png",
-                                            this));
+                                            this));*/
 
-  toggles.append(new ParamControl("KeepSteeringTurnSignals",
-                                            "Keep steering while turn signals",
-                                            "",
-                                            "../assets/offroad/icon_openpilot.png",
-                                            this));
-  toggles.append(new ParamControl("HapticFeedbackWhenSpeedCamera",
-                                            "Haptic feedback (speed-cam alert)",
-                                            "Haptic feedback when a speed camera is detected",
-                                            "../assets/offroad/icon_openpilot.png",
-                                            this));
 
   /*toggles.append(new ParamControl("NewRadarInterface",
                                             "Use new radar interface",
@@ -688,21 +716,16 @@ CommunityPanel::CommunityPanel(QWidget* parent) : QWidget(parent) {
                                             "../assets/offroad/icon_road.png",
                                             this));*/
 
-  toggles.append(new ParamControl("DisableOpFcw",
+  /*toggles.append(new ParamControl("DisableOpFcw",
                                             "Disable Openpilot FCW",
                                             "",
                                             "../assets/offroad/icon_shell.png",
-                                            this));
+                                            this));*/
 
-  toggles.append(new ParamControl("ShowDebugUI",
-                                            "Show Debug UI",
-                                            "",
-                                            "../assets/offroad/icon_shell.png",
-                                            this));
 
   /*toggles.append(new ParamControl("CustomLeadMark",
-                                            "Use custom lead mark",
-                                            "",
+                                            "레이더표시를 개조",
+                                            "레이더 삼각형 이미지를 커스텀 이미지로 개조합니다.",
                                             "../assets/offroad/icon_road.png",
                                             this));*/
 
@@ -721,7 +744,7 @@ SelectCar::SelectCar(QWidget* parent): QWidget(parent) {
   main_layout->setSpacing(20);
 
   // Back button
-  QPushButton* back = new QPushButton("Back");
+  QPushButton* back = new QPushButton("닫기");
   back->setObjectName("back_btn");
   back->setFixedSize(500, 100);
   connect(back, &QPushButton::clicked, [=]() { emit backPress(); });
@@ -759,55 +782,6 @@ SelectCar::SelectCar(QWidget* parent): QWidget(parent) {
         Params().put("SelectedCar", list->currentItem()->text().toStdString());
 
     emit selectedCar();
-    });
-
-  main_layout->addWidget(list);
-}
-
-LateralControl::LateralControl(QWidget* parent): QWidget(parent) {
-
-  QVBoxLayout* main_layout = new QVBoxLayout(this);
-  main_layout->setMargin(20);
-  main_layout->setSpacing(20);
-
-  // Back button
-  QPushButton* back = new QPushButton("Back");
-  back->setObjectName("back_btn");
-  back->setFixedSize(500, 100);
-  connect(back, &QPushButton::clicked, [=]() { emit backPress(); });
-  main_layout->addWidget(back, 0, Qt::AlignLeft);
-
-  QListWidget* list = new QListWidget(this);
-  list->setStyleSheet("QListView {padding: 40px; background-color: #393939; border-radius: 15px; height: 140px;} QListView::item{height: 100px}");
-  //list->setAttribute(Qt::WA_AcceptTouchEvents, true);
-  QScroller::grabGesture(list->viewport(), QScroller::LeftMouseButtonGesture);
-  list->setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
-
-  QStringList items = {"LQR", "INDI", "TORQUE"};
-  list->addItems(items);
-  list->setCurrentRow(0);
-
-  QString selectedControl = QString::fromStdString(Params().get("LateralControl"));
-
-  int index = 0;
-  for(QString item : items) {
-    if(selectedControl == item) {
-        list->setCurrentRow(index);
-        break;
-    }
-    index++;
-  }
-
-  QObject::connect(list, QOverload<QListWidgetItem*>::of(&QListWidget::itemClicked),
-    [=](QListWidgetItem* item){
-
-    Params().put("LateralControl", list->currentItem()->text().toStdString());
-    emit selected();
-
-    QTimer::singleShot(1000, []() {
-        Params().putBool("SoftRestartTriggered", true);
-      });
-
     });
 
   main_layout->addWidget(list);

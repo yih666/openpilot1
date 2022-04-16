@@ -3,13 +3,13 @@ from common.realtime import DT_MDL
 from common.conversions import Conversions as CV
 from common.params import Params
 
-AUTO_LCA_START_TIME = 1.0
+AUTO_LCA_START_TIME = 0.
 
 LaneChangeState = log.LateralPlan.LaneChangeState
 LaneChangeDirection = log.LateralPlan.LaneChangeDirection
 
-LANE_CHANGE_SPEED_MIN = 60 * CV.KPH_TO_MS
-LANE_CHANGE_TIME_MAX = 10.
+LANE_CHANGE_SPEED_MIN = 56 * CV.KPH_TO_MS
+LANE_CHANGE_TIME_MAX = 5.
 
 DESIRES = {
   LaneChangeDirection.none: {
@@ -42,7 +42,7 @@ class DesireHelper:
     self.keep_pulse_timer = 0.0
     self.prev_one_blinker = False
     self.desire = log.LateralPlan.Desire.none
-
+    
     self.lane_change_enabled = Params().get_bool('LaneChangeEnabled')
     self.auto_lane_change_enabled = Params().get_bool('AutoLaneChangeEnabled')
     self.auto_lane_change_timer = 0.0

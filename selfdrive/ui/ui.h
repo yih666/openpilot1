@@ -80,11 +80,11 @@ typedef enum UIStatus {
 } UIStatus;
 
 const QColor bg_colors [] = {
-  [STATUS_DISENGAGED] =  QColor(0x17, 0x33, 0x49, 0xc8),
-  [STATUS_OVERRIDE] = QColor(0x91, 0x9b, 0x95, 0xf1),
-  [STATUS_ENGAGED] = QColor(0x17, 0x86, 0x44, 0xf1),
-  [STATUS_WARNING] = QColor(0xDA, 0x6F, 0x25, 0xf1),
-  [STATUS_ALERT] = QColor(0xC9, 0x22, 0x31, 0xf1),
+  [STATUS_DISENGAGED] =  QColor(0x80, 0x80, 0x80, 0xe6),
+  [STATUS_OVERRIDE] = QColor(0x1e, 0x90, 0xff, 0xf1),
+  [STATUS_ENGAGED] = QColor(0x87, 0xce, 0xeb, 0x66),
+  [STATUS_WARNING] = QColor(0x80, 0x80, 0x80, 0x0f),
+  [STATUS_ALERT] = QColor(0xC9, 0x22, 0x31, 0x65),
 };
 
 typedef struct {
@@ -94,8 +94,24 @@ typedef struct {
 
 typedef struct UIScene {
   mat3 view_from_calib;
+  
+  int lateralControlSelect;
+  float output_scale;
+  float angleSteers;
+  bool steerOverride;
+  float angleSteersDes;
+  float cpuTempAvg;
+  
   cereal::PandaState::PandaType pandaType;
+  
+  int dynamic_lane_profile;
 
+  cereal::LateralPlan::Reader lateral_plan;
+  cereal::ControlsState::Reader controls_state;
+  cereal::CarControl::Reader car_control;
+  cereal::CarState::Reader car_state;
+  cereal::DeviceState::Reader deviceState;
+  
   // modelV2
   float lane_line_probs[4];
   float road_edge_stds[2];
@@ -110,6 +126,11 @@ typedef struct UIScene {
   float light_sensor, accel_sensor, gyro_sensor;
   bool started, ignition, is_metric, longitudinal_control, end_to_end;
   uint64_t started_frame;
+  
+  struct _LateralPlan
+  {
+    bool dynamicLaneProfileStatus;
+  } lateralPlan;
 } UIScene;
 
 class UIState : public QObject {
@@ -140,7 +161,11 @@ public:
 
   bool recording = false;
   bool show_debug = false;
-  std::string lat_control;
+  bool show_gear = false;//기어
+  bool show_bsd = false;//bsd
+  bool show_tpms = false;
+  bool show_brake = false;
+  bool show_lcr = false;
 
 signals:
   void uiUpdate(const UIState &s);

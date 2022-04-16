@@ -43,6 +43,8 @@ def manager_init() -> None:
     ("HasAcceptedTerms", "0"),
     ("OpenpilotEnabledToggle", "1"),
     ("IsMetric", "1"),
+    ("DynamicLaneProfile", "2"),
+    ("EndToEndToggle", "1"),
 
     # HKG
     ("UseClusterSpeed", "0"),
@@ -51,15 +53,21 @@ def manager_init() -> None:
     ("IsLdwsCar", "0"),
     ("LaneChangeEnabled", "0"),
     ("AutoLaneChangeEnabled", "0"),
+    ("LateralControlSelect", "0"),
+    ("AutoLaneChangeTimer", "0"),
 
     ("SccSmootherSlowOnCurves", "0"),
     ("SccSmootherSyncGasPressed", "0"),
     ("StockNaviDecelEnabled", "0"),
     ("KeepSteeringTurnSignals", "0"),
-    ("HapticFeedbackWhenSpeedCamera", "0"),
+    ("HapticFeedbackWhenSpeedCamera", "1"),
+    ("ShowBsdUI", "1"),
+    ("ShowTpmsUI", "1"),
     ("DisableOpFcw", "0"),
     ("ShowDebugUI", "0"),
     ("NewRadarInterface", "0"),
+    ("AutoAscc", "1"),
+    ("PutPrebuilt", "0"), 
   ]
   if not PC:
     default_params.append(("LastUpdateTime", datetime.datetime.utcnow().isoformat().encode('utf8')))

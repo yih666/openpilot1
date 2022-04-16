@@ -5,6 +5,7 @@ from common.numpy_fast import clip, interp
 from common.realtime import DT_CTRL
 from cereal import log
 from selfdrive.controls.lib.latcontrol import LatControl, MIN_STEER_SPEED
+from common.conversions import Conversions as CV
 from selfdrive.ntune import nTune
 
 TORQUE_SCALE_BP = [0., 30., 80., 100., 130.]
