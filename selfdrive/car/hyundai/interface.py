@@ -115,14 +115,14 @@ class CarInterface(CarInterfaceBase):
 		
 	
     # longitudinal
-    #ret.longitudinalTuning.kpBP = [0., 5.*CV.KPH_TO_MS, 10.*CV.KPH_TO_MS, 20.*CV.KPH_TO_MS, 30.*CV.KPH_TO_MS, 40.*CV.KPH_TO_MS, 50.*CV.KPH_TO_MS, 130.*CV.KPH_TO_MS]
-    #ret.longitudinalTuning.kpV = [1.5, 1.24, 0.96, 0.90, 0.78, 0.58, 0.41, 0.36]
-    #ret.longitudinalTuning.kiBP = [0., 130. * CV.KPH_TO_MS]
-    #ret.longitudinalTuning.kiV = [0.08, 0.02]
-    ret.longitudinalTuning.kpBP = [0., 6., 10., 35.]
-    ret.longitudinalTuning.kpV = [1., .8, 0.5, .2]
-    ret.longitudinalTuning.kiBP = [0., 30.]
-    ret.longitudinalTuning.kiV = [.01, .01]
+    ret.longitudinalTuning.kpBP = [0., 5.*CV.KPH_TO_MS, 10.*CV.KPH_TO_MS, 20.*CV.KPH_TO_MS, 30.*CV.KPH_TO_MS, 40.*CV.KPH_TO_MS, 50.*CV.KPH_TO_MS, 130.*CV.KPH_TO_MS]
+    ret.longitudinalTuning.kpV = [1.45, 1.24, 0.96, 0.90, 0.78, 0.58, 0.41, 0.36]
+    ret.longitudinalTuning.kiBP = [0., 130. * CV.KPH_TO_MS]
+    ret.longitudinalTuning.kiV = [0.08, 0.02]
+    #ret.longitudinalTuning.kpBP = [0., 6., 10., 35.]
+    #ret.longitudinalTuning.kpV = [1., .8, 0.5, .2]
+    #ret.longitudinalTuning.kiBP = [0., 30.]
+    #ret.longitudinalTuning.kiV = [.01, .01]
 
     ret.longitudinalActuatorDelayLowerBound = 0.3
     ret.longitudinalActuatorDelayUpperBound = 0.5
