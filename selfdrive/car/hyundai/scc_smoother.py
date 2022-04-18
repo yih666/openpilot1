@@ -218,7 +218,7 @@ class SccSmoother:
       dRel = lead.dRel
 
     # Auto-resume Cruise Set Speed by JangPoo
-    ascc_auto_set = enabled and (clu11_speed > 30 or (CS.obj_valid and dRel > 1)) \
+    ascc_auto_set = enabled and (clu11_speed > 40 or (CS.obj_valid and dRel > 1)) \
                     and CS.gas_pressed and CS.prev_cruiseState_speed and not CS.cruiseState_speed # Auto-resume Cruise Set Speed by JangPoo - 파파
 
     if not self.longcontrol:
@@ -242,12 +242,12 @@ class SccSmoother:
         if ascc_enabled:
           if self.autoascc:  
             self.btn = self.get_button(CS.cruiseState_speed * self.speed_conv_to_clu)
-        elif ascc_auto_set and clu11_speed < 30:
+        elif ascc_auto_set and clu11_speed < 40:
           if self.autoascc:  
-            self.btn = Buttons.RES_ACCEL #SET_DECEL
+            self.btn = Buttons.SET_DECEL
         else:
           if self.autoascc:
-            self.btn = Buttons.SET_DECEL #RES_ACCEL
+            self.btn = Buttons.RES_ACCEL
         self.alive_count = SccSmoother.get_alive_count()
 
       if self.btn != Buttons.NONE:
