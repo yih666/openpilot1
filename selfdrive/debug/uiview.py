@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import time
-
 from cereal import car, log, messaging
 from common.params import Params
 from selfdrive.hardware import HARDWARE

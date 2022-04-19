@@ -89,7 +89,7 @@ class CarInterface(CarInterfaceBase):
           ret.lateralTuning.init('lqr')
           ret.lateralTuning.lqr.scale = 1600.
           ret.lateralTuning.lqr.ki = 0.01
-          ret.lateralTuning.lqr.dcGain = 0.0027
+          ret.lateralTuning.lqr.dcGain = 0.0026
           ret.lateralTuning.lqr.a = [0., 1., -0.22619643, 1.21822268]
           ret.lateralTuning.lqr.b = [-1.92006585e-04, 3.95603032e-05]
           ret.lateralTuning.lqr.c = [1., 0.]
@@ -106,11 +106,11 @@ class CarInterface(CarInterfaceBase):
       if candidate in [CAR.GENESIS, CAR.GENESIS_G80, CAR.GENESIS_EQ900]:
           ret.lateralTuning.init('torque')
           ret.lateralTuning.torque.useSteeringAngle = True
-          ret.lateralTuning.torque.kp = 2.0
+          ret.lateralTuning.torque.kp = 1.0
           ret.lateralTuning.torque.kf = 0.05
           ret.lateralTuning.torque.friction = 0.01
-          ret.lateralTuning.torque.ki = 0.05
-          ret.lateralTuning.torque.kd = 0.7
+          ret.lateralTuning.torque.ki = 0.0
+          ret.lateralTuning.torque.kd = 0.5
 		
 	
     # longitudinal
