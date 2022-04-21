@@ -25,7 +25,7 @@ def apply_deadzone(error, deadzone):
 
 
 def long_control_state_trans(CP, active, long_control_state, v_ego, v_target,
-                             v_target_future, brake_pressed, cruise_standstill, radar_state):
+                             v_target_future, brake_pressed, cruise_standstill):
   """Update longitudinal control state machine"""
   accelerating = v_target_future > v_target
   stopping_condition = (v_ego < 2.0 and cruise_standstill) or \
@@ -33,10 +33,6 @@ def long_control_state_trans(CP, active, long_control_state, v_ego, v_target,
                         ((v_target_future < CP.vEgoStopping and not accelerating) or brake_pressed))
 
   starting_condition = v_target_future > CP.vEgoStarting and accelerating and not cruise_standstill
-
-  # neokii
-  if radar_state is not None and radar_state.leadOne is not None and radar_state.leadOne.status:
-    starting_condition = starting_condition and radar_state.leadOne.vLead > CP.vEgoStarting
 
   if not active:
     long_control_state = LongCtrlState.off
@@ -72,7 +68,7 @@ class LongControl():
     self.pid.reset()
     self.v_pid = v_pid
 
-  def update(self, active, CS, CP, long_plan, accel_limits, t_since_plan, radar_state):
+  def update(self, active, CS, CP, long_plan, accel_limits, t_since_plan):
     """Update longitudinal control. This updates the state machine and runs a PID loop"""
     # Interp control trajectory
     speeds = long_plan.speeds
@@ -103,7 +99,7 @@ class LongControl():
     output_accel = self.last_output_accel
     self.long_control_state = long_control_state_trans(CP, active, self.long_control_state, CS.vEgo,
                                                        v_target, v_target_future, CS.brakePressed,
-                                                       CS.cruiseState.standstill, radar_state)
+                                                       CS.cruiseState.standstill)
 
     if self.long_control_state == LongCtrlState.off:
       self.reset(CS.vEgo)
@@ -130,8 +126,8 @@ class LongControl():
     elif self.long_control_state == LongCtrlState.stopping:
       # Keep applying brakes until the car is stopped
       if not CS.standstill or output_accel > CP.stopAccel:
-        output_accel -= CP.stoppingDecelRate * DT_CTRL * \
-                        interp(output_accel, [CP.stopAccel, CP.stopAccel/2., CP.stopAccel/4., 0.], [0.3, 0.65, 1., 2.])
+        output_accel -= CP.stoppingDecelRate * DT_CTRL
+
       output_accel = clip(output_accel, accel_limits[0], accel_limits[1])
       self.reset(CS.vEgo)
 

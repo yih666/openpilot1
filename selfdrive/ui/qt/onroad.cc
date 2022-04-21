@@ -603,6 +603,7 @@ void NvgWindow::drawCommunity(QPainter &p) {
   drawRestArea(p);
   drawTurnSignals(p);
   drawGpsStatus(p);
+  drawSteer(p);
   drawBrake(p);
   drawLcr(p);
 	
@@ -1015,6 +1016,37 @@ void NvgWindow::drawSpeedLimit(QPainter &p) {
       p.drawText(rect, Qt::AlignCenter, "CAM");
     }
   }
+}
+
+void NvgWindow::drawSteer(QPainter &p) {
+
+  int x = 0;
+  int y = 590;
+
+  const SubMaster &sm = *(uiState()->sm);
+  auto car_state = sm["carState"].getCarState();
+  auto car_control = sm["carControl"].getCarControl();
+
+  float steer_angle = car_state.getSteeringAngleDeg();
+  float desire_angle = car_control.getActuators().getSteeringAngleDeg();
+
+  configFont(p, "Open Sans", 50, "Bold");
+
+  QString str;
+  int width = 192;
+
+  str.sprintf("%.0f°", steer_angle);
+  QRect rect = QRect(x, y, width, width);
+
+  p.setPen(QColor(255, 255, 255, 200));
+  p.drawText(rect, Qt::AlignCenter, str);
+
+  str.sprintf("%.0f°", desire_angle);
+  rect.setRect(x, y + 80, width, width);
+
+  p.setPen(QColor(155, 255, 155, 200));
+  p.drawText(rect, Qt::AlignCenter, str);
+
 }
 
 QPixmap NvgWindow::get_icon_iol_com(const char* key) {

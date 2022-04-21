@@ -133,6 +133,7 @@ protected:
   void drawLcr(QPainter &p);
   void drawCommunity(QPainter &p);
   void drawRestArea(QPainter &p);
+  void drawSteer(QPainter &p);
   
   const int radius = 192;
   const int img_size = (radius / 2) * 1.5;

@@ -38,7 +38,7 @@ class MPC_COST_LAT:
   PATH = 1.0
   HEADING = 1.0
   STEER_RATE = 1.0
-  LANELESS_HEADING_MIN = 0.15
+  LANELESS_HEADING_MIN = 0.1
 
 
 def rate_limit(new_value, last_value, dw_step, up_step):
@@ -109,7 +109,7 @@ def get_lag_adjusted_curvature(CP, v_ego, psis, curvatures, curvature_rates):
   desired_curvature = current_curvature + 2 * curvature_diff_from_psi
 
   v_ego = max(v_ego, 0.1)
-  max_curvature_rate = MAX_LATERAL_JERK / ((v_ego/2.5)**2)
+  max_curvature_rate = MAX_LATERAL_JERK / (v_ego**2)
   safe_desired_curvature_rate = clip(desired_curvature_rate,
                                           -max_curvature_rate,
                                           max_curvature_rate)
