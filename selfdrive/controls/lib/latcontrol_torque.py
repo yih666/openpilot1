@@ -85,4 +85,3 @@ class LatControlTorque(LatControl):
 
     #TODO left is positive in this convention
     return -clip(output_torque, -self.steer_max, self.steer_max), angle_steers_des, pid_log
-    return -clip(output_torque, -self.steer_max, self.steer_max), angle_steers_des, pid_log
