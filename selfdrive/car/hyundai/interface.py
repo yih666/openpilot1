@@ -50,9 +50,9 @@ class CarInterface(CarInterfaceBase):
 
     # -------------PID
     if Params().get("LateralControlSelect", encoding='utf8') == "0":
-      ret.lateralTuning.pid.kf = 0.00005
+      ret.lateralTuning.pid.kf = 0.000052
       ret.lateralTuning.pid.kpBP = [0., 10., 30.]
-      ret.lateralTuning.pid.kpV = [0.01, 0.04, 0.055]
+      ret.lateralTuning.pid.kpV = [0.01, 0.04, 0.052]
       ret.lateralTuning.pid.kiBP = [0., 30.]
       ret.lateralTuning.pid.kiV = [0.02, 0.02]
       ret.lateralTuning.pid.kdBP = [0.]
