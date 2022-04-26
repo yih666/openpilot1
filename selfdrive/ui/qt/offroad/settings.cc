@@ -124,7 +124,7 @@ DevicePanel::DevicePanel(SettingsWindow *parent) : ListWidget(parent) {
   reset_layout->setSpacing(30);
 
   QPushButton *restart_openpilot_btn = new QPushButton("소프트 재부팅");
-  restart_openpilot_btn->setStyleSheet("height: 120px;border-radius: 15px;background-color: #7300a4;");
+  restart_openpilot_btn->setStyleSheet("height: 120px;border-radius: 15px;background-color: #2f4f4f;");
   reset_layout->addWidget(restart_openpilot_btn);
   QObject::connect(restart_openpilot_btn, &QPushButton::released, [=]() {
     emit closeSettings();
@@ -158,6 +158,23 @@ DevicePanel::DevicePanel(SettingsWindow *parent) : ListWidget(parent) {
   reboot_btn->setObjectName("reboot_btn");
   power_layout->addWidget(reboot_btn);
   QObject::connect(reboot_btn, &QPushButton::clicked, this, &DevicePanel::reboot);
+  
+  QPushButton *rebuild_btn = new QPushButton("재빌드");
+  rebuild_btn->setObjectName("rebuild_btn");
+  power_layout->addWidget(rebuild_btn);
+  QObject::connect(rebuild_btn, &QPushButton::clicked, [=]() {
+
+    if (ConfirmationDialog::confirm("재빌드 하시겠습니까?", this)) {
+      std::system("cd /data/openpilot && scons -c");
+      std::system("rm /data/openpilot/.sconsign.dblite");
+      std::system("rm /data/openpilot/prebuilt");
+      std::system("rm -rf /tmp/scons_cache");
+      if (Hardware::TICI())
+        std::system("sudo reboot");
+      else
+        std::system("reboot");
+    }
+  });
 
   QPushButton *poweroff_btn = new QPushButton("종료");
   poweroff_btn->setObjectName("poweroff_btn");
@@ -171,11 +188,13 @@ DevicePanel::DevicePanel(SettingsWindow *parent) : ListWidget(parent) {
     }
     #reboot_btn { background-color: #00bfff; }
     #reboot_btn:pressed { background-color: #0000ff; }
+    #rebuild_btn { background-color: #7300a4; }
+    #rebuild_btn:pressed { background-color: #4a4a4a; }
     #poweroff_btn { background-color: #E22C2C; }
     #poweroff_btn:pressed { background-color: #FF2424; }
   )");
   addItem(power_layout);
-    
+  
   // offroad-only buttons
 
   auto dcamBtn = new ButtonControl("운전자 모니터링 미리보기", "실행",
@@ -424,6 +443,11 @@ VIPPanel::VIPPanel(QWidget* parent) : QWidget(parent) {
   layout->addWidget(new LabelControl("제어메뉴", ""));
   layout->addWidget(new LateralControlSelect());
   layout->addWidget(new AutoLaneChangeTimer());
+  layout->addWidget(new ParamControl("SteerLockout",
+                                            "\U0001F94F 제네시스dh 90도 이상 조향 활성화 \U0001F94F",
+                                            "제네시스DH 90도이상 조향 오류발생시 비활성화.",
+                                            "../assets/offroad/icon_road.png",
+                                            this));
   layout->addWidget(new ParamControl("AutoAscc",
                                             "Ascc auto set",
                                             "Ascc auto set 적용",

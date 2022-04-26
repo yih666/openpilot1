@@ -67,6 +67,7 @@ def manager_init() -> None:
     ("ShowDebugUI", "0"),
     ("NewRadarInterface", "0"),
     ("AutoAscc", "1"),
+    ("SteerLockout", "1"),
     ("PutPrebuilt", "0"), 
   ]
   if not PC:

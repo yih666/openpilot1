@@ -56,10 +56,12 @@ class LongControl():
   def __init__(self, CP):
     self.long_control_state = LongCtrlState.off  # initialized to off
     self.pid = PIDController((CP.longitudinalTuning.kpBP, CP.longitudinalTuning.kpV),
-                            (CP.longitudinalTuning.kiBP, CP.longitudinalTuning.kiV),
-                            (CP.longitudinalTuning.kdBP, CP.longitudinalTuning.kdV),
-                            k_f = CP.longitudinalTuning.kf, rate=1 / DT_CTRL,
-                            derivative_period=0.5)
+                             (CP.longitudinalTuning.kiBP, CP.longitudinalTuning.kiV),
+                             k_f=CP.longitudinalTuning.kf,
+                             k_d=(CP.longitudinalTuning.kdBP, CP.longitudinalTuning.kdV),
+                             rate=1 / DT_CTRL,
+                             # TODO: add support for this kind of derivative back
+                             derivative_period=0.5)
     self.v_pid = 0.0
     self.last_output_accel = 0.0
 
@@ -127,7 +129,6 @@ class LongControl():
       # Keep applying brakes until the car is stopped
       if not CS.standstill or output_accel > CP.stopAccel:
         output_accel -= CP.stoppingDecelRate * DT_CTRL
-
       output_accel = clip(output_accel, accel_limits[0], accel_limits[1])
       self.reset(CS.vEgo)
 

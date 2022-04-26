@@ -519,6 +519,7 @@ struct CarParams {
   hasLfaHda @75 :Bool;
   steerFaultMaxAngle @76 :Int16;
   steerFaultMaxFrames @77 :Int16;
+  disableLateralLiveTuning @78 :Bool;
 
   struct LateralParams {
     torqueBP @0 :List(Int32);
@@ -543,6 +544,9 @@ struct CarParams {
     friction @3 :Float32;
     kf @4 :Float32;
     kd @5 :Float32;
+    deadzoneBP @6 :List(Float32);
+    deadzoneV @7 :List(Float32);
+  }
   }
 
   struct LongitudinalPIDTuning {

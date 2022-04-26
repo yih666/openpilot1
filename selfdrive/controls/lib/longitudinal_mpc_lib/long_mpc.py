@@ -35,7 +35,7 @@ X_EGO_COST = 0.
 V_EGO_COST = 0.
 A_EGO_COST = 0.
 J_EGO_COST = 1.5
-A_CHANGE_COST = 75. # 200.
+A_CHANGE_COST = 50. # 200.
 DANGER_ZONE_COST = 100.
 CRASH_DISTANCE = .5
 LIMIT_COST = 1e6
@@ -43,10 +43,10 @@ ACADOS_SOLVER_TYPE = 'SQP_RTI'
 
 
 CRUISE_GAP_BP = [1., 2., 3., 4.]
-CRUISE_GAP_V = [1.0, 1.2, 1.6, 1.6]
+CRUISE_GAP_V = [1.0, 1.2, 1.6, 1.8]
 
 AUTO_TR_BP = [0., 30.*CV.KPH_TO_MS, 70.*CV.KPH_TO_MS, 110.*CV.KPH_TO_MS]
-AUTO_TR_V = [1.0, 1.1, 1.35, 1.45]
+AUTO_TR_V = [1.05, 1.15, 1.25, 1.4]
 
 AUTO_TR_CRUISE_GAP = 4
 
@@ -63,7 +63,7 @@ T_DIFFS = np.diff(T_IDXS, prepend=[0.])
 MIN_ACCEL = -3.5
 T_FOLLOW = 1.45
 COMFORT_BRAKE = 2.5
-STOP_DISTANCE = 7.0
+STOP_DISTANCE = 6.5
 
 def get_stopped_equivalence_factor(v_lead):
   return (v_lead**2) / (2 * COMFORT_BRAKE)
