@@ -547,7 +547,6 @@ struct CarParams {
     deadzoneBP @6 :List(Float32);
     deadzoneV @7 :List(Float32);
   }
-  }
 
   struct LongitudinalPIDTuning {
     kpBP @0 :List(Float32);

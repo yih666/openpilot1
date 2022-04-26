@@ -17,6 +17,7 @@ from selfdrive.ntune import nTune
 # friction in the steering wheel that needs to be overcome to
 # move it at all, this is compensated for too.
 
+
 LOW_SPEED_FACTOR = 200
 JERK_THRESHOLD = 0.2
 
@@ -67,12 +68,12 @@ class LatControlTorque(LatControl):
       setpoint = desired_lateral_accel + LOW_SPEED_FACTOR * desired_curvature
       measurement = actual_lateral_accel + LOW_SPEED_FACTOR * actual_curvature
       error = setpoint - measurement
-
+      
       deadzone = interp(CS.vEgo, CP.lateralTuning.torque.deadzoneBP, CP.lateralTuning.torque.deadzoneV)
       error_deadzone = apply_deadzone(error, deadzone)
 
       pid_log.error = error_deadzone
-
+      
       ff = desired_lateral_accel - params.roll * ACCELERATION_DUE_TO_GRAVITY
       output_torque = self.pid.update(error_deadzone,
                                       override=CS.steeringPressed, feedforward=ff,

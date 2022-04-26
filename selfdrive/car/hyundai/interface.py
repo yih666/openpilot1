@@ -92,12 +92,12 @@ class CarInterface(CarInterfaceBase):
     elif Params().get("LateralControlSelect", encoding='utf8') == "3":
       ret.lateralTuning.init('torque')
       ret.lateralTuning.torque.useSteeringAngle = True
-      max_lat_accel = 2.8
+      max_lat_accel = 3.2
       ret.lateralTuning.torque.kp = 2.0 / max_lat_accel
       ret.lateralTuning.torque.kf = 0.5 / max_lat_accel
       ret.lateralTuning.torque.friction = 0.005
       ret.lateralTuning.torque.ki = 0.05 / max_lat_accel
-      ret.lateralTuning.torque.deadzoneBP = [0., 80. *CV.KPH_TO_MS]
+      ret.lateralTuning.torque.deadzoneBP = [0., 50.]
       ret.lateralTuning.torque.deadzoneV = [0., 0.02]
 
 
