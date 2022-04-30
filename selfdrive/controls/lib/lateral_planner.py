@@ -14,7 +14,7 @@ from cereal import log
 LaneChangeState = log.LateralPlan.LaneChangeState
 
 class LateralPlanner:
-  def __init__(self, CP, use_lanelines=True, wide_camera=False, heading_cost=1.0, path_cost=(1.0, 1.0)):
+  def __init__(self, CP, use_lanelines=True, wide_camera=False):
     self.use_lanelines = use_lanelines
     self.LP = LanePlanner(wide_camera)
     self.DH = DesireHelper()
@@ -86,55 +86,55 @@ class LateralPlanner:
       self.LP.lll_prob *= self.DH.lane_change_ll_prob
       self.LP.rll_prob *= self.DH.lane_change_ll_prob
 
-    steer_rate_cost = ntune_common_get('steerRateCost')
-
     # Calculate final driving path and set MPC costs
     if self.use_lanelines:
       d_path_xyz = self.LP.get_d_path(v_ego, self.t_idxs, self.path_xyz)
-      self.lat_mpc.set_weights(MPC_COST_LAT.PATH, MPC_COST_LAT.HEADING, steer_rate_cost)
+      self.lat_mpc.set_weights(MPC_COST_LAT.PATH, MPC_COST_LAT.HEADING, ntune_common_get('steerRateCost'))
       self.dynamic_lane_profile_status = False
     elif self.dynamic_lane_profile == 0:
       d_path_xyz = self.LP.get_d_path(v_ego, self.t_idxs, self.path_xyz)
-      self.lat_mpc.set_weights(MPC_COST_LAT.PATH, MPC_COST_LAT.HEADING, steer_rate_cost)
+      self.lat_mpc.set_weights(MPC_COST_LAT.PATH, MPC_COST_LAT.HEADING, ntune_common_get('steerRateCost'))
       self.dynamic_lane_profile_status = False
     elif self.dynamic_lane_profile == 1:
       d_path_xyz = self.path_xyz
       path_cost = np.clip(abs(self.path_xyz[0, 1] / self.path_xyz_stds[0, 1]), 0.5, 1.0) * MPC_COST_LAT.PATH
       # Heading cost is useful at low speed, otherwise end of plan can be off-heading
-      heading_cost = interp(v_ego, [5.0, 10.0], [MPC_COST_LAT.HEADING, MPC_COST_LAT.LANELESS_HEADING_MIN])
-      self.lat_mpc.set_weights(path_cost, heading_cost, steer_rate_cost)
+      heading_cost = interp(v_ego, [5.0, 10.0], [MPC_COST_LAT.HEADING, 0.0])
+      self.lat_mpc.set_weights(path_cost, heading_cost, ntune_common_get('steerRateCost'))
       self.dynamic_lane_profile_status = True
     elif self.dynamic_lane_profile == 2 and ((self.LP.lll_prob + self.LP.rll_prob)/2 < 0.3) and self.DH.lane_change_state == LaneChangeState.off:
       d_path_xyz = self.path_xyz
       path_cost = np.clip(abs(self.path_xyz[0, 1] / self.path_xyz_stds[0, 1]), 0.5, 1.0) * MPC_COST_LAT.PATH
       # Heading cost is useful at low speed, otherwise end of plan can be off-heading
-      heading_cost = interp(v_ego, [5.0, 10.0], [MPC_COST_LAT.HEADING, MPC_COST_LAT.LANELESS_HEADING_MIN])
-      self.lat_mpc.set_weights(path_cost, heading_cost, steer_rate_cost)
+      heading_cost = interp(v_ego, [5.0, 10.0], [MPC_COST_LAT.HEADING, 0.0])
+      self.lat_mpc.set_weights(path_cost, heading_cost, ntune_common_get('steerRateCost'))
       self.dynamic_lane_profile_status = True
       self.dynamic_lane_profile_status_buffer = True
     elif self.dynamic_lane_profile == 2 and ((self.LP.lll_prob + self.LP.rll_prob)/2 > 0.5) and \
      self.dynamic_lane_profile_status_buffer and self.DH.lane_change_state == LaneChangeState.off:
       d_path_xyz = self.LP.get_d_path(v_ego, self.t_idxs, self.path_xyz)
-      self.lat_mpc.set_weights(MPC_COST_LAT.PATH, MPC_COST_LAT.HEADING, steer_rate_cost)
+      self.lat_mpc.set_weights(MPC_COST_LAT.PATH, MPC_COST_LAT.HEADING, ntune_common_get('steerRateCost'))
       self.dynamic_lane_profile_status = False
       self.dynamic_lane_profile_status_buffer = False
     elif self.dynamic_lane_profile == 2 and self.dynamic_lane_profile_status_buffer == True and self.DH.lane_change_state == LaneChangeState.off:
       d_path_xyz = self.path_xyz
       path_cost = np.clip(abs(self.path_xyz[0, 1] / self.path_xyz_stds[0, 1]), 0.5, 1.0) * MPC_COST_LAT.PATH
       # Heading cost is useful at low speed, otherwise end of plan can be off-heading
-      heading_cost = interp(v_ego, [5.0, 10.0], [MPC_COST_LAT.HEADING, MPC_COST_LAT.LANELESS_HEADING_MIN])
-      self.lat_mpc.set_weights(path_cost, heading_cost, steer_rate_cost)
+      heading_cost = interp(v_ego, [5.0, 10.0], [MPC_COST_LAT.HEADING, 0.0])
+      self.lat_mpc.set_weights(path_cost, heading_cost, ntune_common_get('steerRateCost'))
       self.dynamic_lane_profile_status = True
     else:
       d_path_xyz = self.LP.get_d_path(v_ego, self.t_idxs, self.path_xyz)
-      self.lat_mpc.set_weights(MPC_COST_LAT.PATH, MPC_COST_LAT.HEADING, steer_rate_cost)
+      self.lat_mpc.set_weights(MPC_COST_LAT.PATH, MPC_COST_LAT.HEADING, ntune_common_get('steerRateCost'))
       self.dynamic_lane_profile_status = False
       self.dynamic_lane_profile_status_buffer = False
-      
+
+    d_path_xyz[:, 1] += ntune_common_get('pathOffset')
+    
     y_pts = np.interp(v_ego * self.t_idxs[:LAT_MPC_N + 1], np.linalg.norm(d_path_xyz, axis=1), d_path_xyz[:, 1])
     heading_pts = np.interp(v_ego * self.t_idxs[:LAT_MPC_N + 1], np.linalg.norm(self.path_xyz, axis=1), self.plan_yaw)
     self.y_pts = y_pts
-
+	
     assert len(y_pts) == LAT_MPC_N + 1
     assert len(heading_pts) == LAT_MPC_N + 1
     # self.x0[4] = v_ego
