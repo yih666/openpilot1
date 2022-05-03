@@ -114,7 +114,7 @@ def create_mdps12(packer, frame, mdps12):
   values = copy.copy(mdps12)
   values["CF_Mdps_ToiActive"] = 0
   values["CF_Mdps_ToiUnavail"] = 1
-  values["CF_Mdps_MsgCount2"] = frame % 0x40 #100
+  values["CF_Mdps_MsgCount2"] = frame % 0x100
   values["CF_Mdps_Chksum2"] = 0
 
   dat = packer.make_can_msg("MDPS12", 2, values)[2]
@@ -199,3 +199,15 @@ def create_scc14(packer, enabled, e_vgo, standstill, accel, gaspressed, objgap, 
 
   return packer.make_can_msg("SCC14", 0, values)
 
+def create_EpsDtc(packer, Eps_Dtc):
+  values = copy.copy(mdps12)
+  values["CF_Mdps_ToiActive"] = 0
+  values["CF_Mdps_ToiUnavail"] = 1
+  values["CF_Mdps_MsgCount2"] = frame % 0x40
+  values["CF_Mdps_Chksum2"] = 0
+
+  dat = packer.make_can_msg("MDPS12", 2, values)[2]
+  checksum = sum(dat) % 256
+  values["CF_Mdps_Chksum2"] = checksum
+
+  return packer.make_can_msg("MDPS12", 2, values)
