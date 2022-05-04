@@ -5,7 +5,6 @@ from common.numpy_fast import clip, interp
 from common.realtime import DT_CTRL
 from cereal import log
 from selfdrive.controls.lib.latcontrol import LatControl, MIN_STEER_SPEED
-from common.conversions import Conversions as CV
 from selfdrive.ntune import nTune
 
 TORQUE_SCALE_BP = [0., 30., 80., 100., 130.]
@@ -81,6 +80,7 @@ class LatControlLQR(LatControl):
           self.i_lqr = i
 
       output_steer = lqr_output + self.i_lqr
+      output_steer *= interp(abs((desired_angle + angle_steers_k) / 2.), [10., 45., 90.], [1, 1.2, 1.3])
       output_steer = clip(output_steer, -self.steer_max, self.steer_max)
 
     lqr_log.steeringAngleDeg = angle_steers_k

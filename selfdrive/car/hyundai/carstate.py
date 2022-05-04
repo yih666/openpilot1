@@ -92,7 +92,7 @@ class CarState(CarStateBase):
 
     vEgoRawClu = cluSpeed * self.speed_conv_to_ms
     vEgoClu, aEgoClu = self.update_clu_speed_kf(vEgoRawClu)
-    
+
     vEgoRawWheel = (ret.wheelSpeeds.fl + ret.wheelSpeeds.fr + ret.wheelSpeeds.rl + ret.wheelSpeeds.rr) / 4.
     vEgoRawWheel = interp(vEgoRawWheel, [0., 10.], [(vEgoRawWheel + vEgoRawClu) / 2., vEgoRawWheel])
     vEgoWheel, aEgoWheel = self.update_speed_kf(vEgoRawWheel)
@@ -125,7 +125,7 @@ class CarState(CarStateBase):
     else:
       self.mdps_error_cnt = 0
 
-    ret.steerFaultTemporary = self.mdps_error_cnt > 9999
+    ret.steerFaultTemporary = self.mdps_error_cnt > 255
 
     if self.CP.enableAutoHold:
       ret.autoHold = cp.vl["ESP11"]["AVH_STAT"]
