@@ -9,7 +9,9 @@ from common.realtime import DT_CTRL
 from common.conversions import Conversions as CV
 from selfdrive.car.hyundai.values import Buttons
 from common.params import Params
-from selfdrive.controls.lib.drive_helpers import V_CRUISE_MAX, V_CRUISE_MIN, V_CRUISE_DELTA_KM, V_CRUISE_DELTA_MI, CONTROL_N
+from selfdrive.controls.lib.drive_helpers import V_CRUISE_MAX, V_CRUISE_MIN, V_CRUISE_DELTA_KM, V_CRUISE_DELTA_MI, \
+  CONTROL_N
+from selfdrive.controls.lib.lane_planner import TRAJECTORY_SIZE
 from selfdrive.controls.lib.longitudinal_mpc_lib.long_mpc import AUTO_TR_CRUISE_GAP
 
 from selfdrive.ntune import ntune_scc_get
@@ -17,7 +19,6 @@ from selfdrive.road_speed_limiter import road_speed_limiter_get_max_speed, road_
   get_road_speed_limiter
 
 SYNC_MARGIN = 3.
-CREEP_SPEED = 2.3
 
 # do not modify
 MIN_SET_SPEED_KPH = V_CRUISE_MIN
@@ -374,11 +375,7 @@ class SccSmoother:
     else:
       accel *= brake_factor
 
-    start_boost = interp(CS.out.vEgo, [0.0, CREEP_SPEED, 2 * CREEP_SPEED], [0.6, 0.6, 0.0])
-    is_accelerating = interp(accel, [0.0, 0.2], [0.0, 1.0])
-    boost = start_boost * is_accelerating
-
-    return accel + boost
+    return accel
 
   def get_stock_cam_accel(self, apply_accel, stock_accel, scc11):
     stock_cam = scc11["Navi_SCC_Camera_Act"] == 2 and scc11["Navi_SCC_Camera_Status"] == 2
