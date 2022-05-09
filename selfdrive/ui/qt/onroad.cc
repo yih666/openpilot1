@@ -649,7 +649,7 @@ void NvgWindow::drawCommunity(QPainter &p) {
   const auto device_state = sm["deviceState"].getDeviceState();
 	
   int lateralControlState = controls_state.getLateralControlSelect();
-  const char* lateral_state[] = {"PID", "INDI", "LQR", "Torque" };
+  const char* lateral_state[] = {"PID", "INDI", "LQR", "TORQUE" };
 	
   auto cpuList = device_state.getCpuTempC();
   float cpuTemp = 0;

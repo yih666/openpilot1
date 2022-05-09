@@ -454,6 +454,11 @@ VIPPanel::VIPPanel(QWidget* parent) : QWidget(parent) {
   layout->addWidget(new LabelControl("제어메뉴", ""));
   layout->addWidget(new LateralControlSelect());
   layout->addWidget(new AutoLaneChangeTimer());
+  layout->addWidget(new ParamControl("SteerLockout",
+                                            "제네시스dh 90도 이상 조향 활성화",
+                                            "제네시스DH 90도이상 조향 오류발생시 비활성화.",
+                                            "../assets/offroad/icon_road.png",
+                                            this));
   layout->addWidget(new ParamControl("AutoSetOpt",
                                             "크루즈 오토 활성화",
                                             "오토크루즈 셋 적용",

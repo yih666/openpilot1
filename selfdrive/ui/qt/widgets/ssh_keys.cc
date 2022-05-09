@@ -146,7 +146,7 @@ void AutoLaneChangeTimer::refresh() {
 }
 
 //LateralControlSelect
-LateralControlSelect::LateralControlSelect() : AbstractControl("LateralControl [√]", "조향로직 선택합니다. (PID/INDI/LQR/Torque)", "../assets/offroad/icon_openpilot.png") {
+LateralControlSelect::LateralControlSelect() : AbstractControl("LateralControl [√]", "조향로직 선택합니다. (PID/INDI/LQR/TORQUE)", "../assets/offroad/icon_openpilot.png") {
  
   label.setAlignment(Qt::AlignVCenter|Qt::AlignRight);
   label.setStyleSheet("color: #e0e879");

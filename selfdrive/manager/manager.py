@@ -69,6 +69,7 @@ def manager_init() -> None:
     ("DisplayRadarInfo", "1"),
     ("NewRadarInterface", "0"),
     ("AutoSetOpt", "1"),
+    ("SteerLockout", "1"),
     ("PutPrebuilt", "0"), 
   ]
   if not PC:
