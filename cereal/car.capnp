@@ -216,6 +216,8 @@ struct CarState {
   vCluRatio @45 :Float32;
   aBasis @46 :Float32;
   currentGear @47 :Float32;
+  
+  engRpm @48 :Float32;
 
   struct Tpms {
     fl @0 :Float32;

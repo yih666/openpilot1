@@ -1,7 +1,4 @@
 
-이 브랜치는 neokii님 브랜치를 기반(opkr & crwusiz & sshane)으로 한 GENESIS(DH차량에 최적화) 전용 브랜치입니다.
-LatControl은 PID로 최적화 시켰으며(LQR,INDI,TORQUE는 UNTESTED), LongControl은 배선개조 차량에 한해 사용가능합니다.
-
 **This is based on xx979xx for Hyundai, Kia, Genesis.**
 
 https://github.com/xx979xx/openpilot

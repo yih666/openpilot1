@@ -173,10 +173,10 @@ class nTune():
     if self.checkValue("useLiveSteerRatio", 0., 1., 1.):
       updated = True
 
-    if self.checkValue("steerRatio", 10.0, 20.0, 16.0):
+    if self.checkValue("steerRatio", 10.0, 20.0, 15.3):
       updated = True
 
-    if self.checkValue("steerActuatorDelay", 0., 0.8, 0.09):
+    if self.checkValue("steerActuatorDelay", 0., 0.8, 0.2):
       updated = True
 
     if self.checkValue("steerRateCost", 0.1, 1.5, 0.4):
@@ -223,11 +223,13 @@ class nTune():
 
     if self.checkValue("useSteeringAngle", 0., 1., 1.):
       updated = True
-    if self.checkValue("maxLatAccel", 0.5, 4.0, 2.2):
+    if self.checkValue("maxLatAccel", 0.5, 4.0, 2.0):
       updated = True
     if self.checkValue("friction", 0.0, 0.2, 0.01):
       updated = True
-    if self.checkValue("kd", 0.0, 1.0, 0.0):
+    if self.checkValue("ki_factor", 0.0, 1.0, 0.1):
+      updated = True
+    if self.checkValue("kd", 0.0, 2.0, 0.0):
       updated = True
     if self.checkValue("deadzone", 0.0, 0.05, 0.0):
       updated = True
@@ -240,7 +242,7 @@ class nTune():
     if self.checkValue("sccGasFactor", 0.5, 1.5, 1.0):
       updated = True
 
-    if self.checkValue("sccBrakeFactor", 0.5, 1.5, 0.87):
+    if self.checkValue("sccBrakeFactor", 0.5, 1.5, 1.0):
       updated = True
 
     if self.checkValue("sccCurvatureFactor", 0.5, 1.5, 0.98):
@@ -275,7 +277,7 @@ class nTune():
       max_lat_accel = float(self.config["maxLatAccel"])
       torque.pid._k_p = [[0], [1.0 / max_lat_accel]]
       torque.pid.k_f = 1.0 / max_lat_accel
-      torque.pid._k_i = [[0], [0.25 / max_lat_accel]]
+      torque.pid._k_i = [[0], [self.config["ki_factor"] / max_lat_accel]]
       torque.pid._k_d = [[0], [float(self.config["kd"])]]
       torque.friction = float(self.config["friction"])
       torque.deadzone = float(self.config["deadzone"])

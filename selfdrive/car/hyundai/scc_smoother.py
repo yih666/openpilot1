@@ -67,7 +67,7 @@ class SccSmoother:
     self.slow_on_curves = Params().get_bool('SccSmootherSlowOnCurves')
     self.sync_set_speed_while_gas_pressed = Params().get_bool('SccSmootherSyncGasPressed')
     self.is_metric = Params().get_bool('IsMetric')
-    self.autoascc = Params().get_bool('AutoAscc')
+    self.autosetopt = Params().get_bool('AutoSetOpt')
 
     self.speed_conv_to_ms = CV.KPH_TO_MS if self.is_metric else CV.MPH_TO_MS
     self.speed_conv_to_clu = CV.MS_TO_KPH if self.is_metric else CV.MS_TO_MPH
@@ -246,13 +246,13 @@ class SccSmoother:
 
       if self.alive_timer == 0:
         if ascc_enabled:
-          if self.autoascc:  
+          if self.autosetopt:  
             self.btn = self.get_button(CS.cruiseState_speed * self.speed_conv_to_clu)
         elif ascc_auto_set and clu11_speed < 40:
-          if self.autoascc:  
+          if self.autosetopt:  
             self.btn = Buttons.SET_DECEL
         else:
-          if self.autoascc:
+          if self.autosetopt:
             self.btn = Buttons.RES_ACCEL
         self.alive_count = SccSmoother.get_alive_count()
 

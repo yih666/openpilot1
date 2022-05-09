@@ -27,7 +27,7 @@ private:
   QPushButton *dlpBtn;
 
   //int dlpStatus = -1;
-  const QStringList dlpBtnColors = {"#87ceeb", "#2231eb", "#808080"};
+  const QStringList dlpBtnColors = {"#87ceeb", "#00ff16", "#808080"};
 
 public slots:
   void updateState(const UIState &s);
@@ -89,7 +89,10 @@ protected:
   void showEvent(QShowEvent *event) override;
   void updateFrameMat(int w, int h) override;
   void drawLaneLines(QPainter &painter, const UIScene &scene);
-  void drawLead(QPainter &painter, const cereal::ModelDataV2::LeadDataV3::Reader &lead_data, const QPointF &vd, bool is_radar);
+  void drawLead(QPainter &painter, const UIScene &scene,
+                const cereal::ModelDataV2::LeadDataV3::Reader &lead_data, 
+                const cereal::RadarState::LeadData::Reader &radar_lead_data, 
+                const QPointF &vd, bool cluspeedms, bool is_radar);
   inline QColor redColor(int alpha = 200) { return QColor(201, 34, 49, alpha); }
   inline QColor blackColor(int alpha = 200) { return QColor(0, 0, 0, alpha); }
   inline QColor greenColor(int alpha = 200) { return QColor(49, 201, 34, alpha); }
@@ -134,6 +137,7 @@ protected:
   void drawCommunity(QPainter &p);
   void drawRestArea(QPainter &p);
   void drawSteer(QPainter &p);
+  void drawEngRpm(QPainter &p);
   
   const int radius = 192;
   const int img_size = (radius / 2) * 1.5;

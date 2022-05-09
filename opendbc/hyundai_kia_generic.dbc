@@ -1524,6 +1524,7 @@ BO_ 865 ADAS_PRK_11: 8 ADAS_PRK
 
 BO_ 882 ELECT_GEAR: 8 XXX
  SG_ Elect_Gear_Shifter : 16|4@1+ (1,0) [0|7] ""  CLU
+ SG_ Elect_Gear_Step : 22|3@0+ (1,0) [0|7] "" XXX
 
 BO_ 881 E_EMS11: 8 XXX
  SG_ Brake_Pedal_Pos : 0|8@1+ (1,0) [0|127] "" XXX
@@ -1533,6 +1534,8 @@ BO_ 881 E_EMS11: 8 XXX
  SG_ Cruise_Limit_Target : 23|8@1+ (1,0) [0|15] "" XXX
  SG_ Accel_Pedal_Pos : 31|8@1+ (1,0) [0|254] "" XXX
  SG_ CR_Vcu_AccPedDep_Pos : 56|8@1+ (1,0) [0|254] "" XXX
+ SG_ Engine_Run : 14|1@0+ (1,0) [0|1] "" XXX
+ SG_ Eng_RPM : 18|13@1+ (1,0) [0|15] "rpm" XXX
 
 BO_ 1355 EV_PC6: 8 CGW
  SG_ CF_Vcu_SbwWarnMsg : 16|3@1+ (1,0) [0|7] "" Vector__XXX
@@ -1619,7 +1622,7 @@ BO_ 1173 YRS13: 8 ACU
 
 BO_ 870 EMS_366: 8 EMS
  SG_ TQI_1 : 0|8@1+ (0.390625,0) [0|99.6094] "%" MDPS
- SG_ N : 8|16@1+ (0.25,0.0) [0.0|16383.75] "rpm" MDPS
+ SG_ Eng_RPM : 8|16@1+ (0.25,0.0) [0.0|16383.75] "rpm" MDPS
  SG_ TQI_2 : 24|8@1+ (0.390625,0) [0|99.6094] "%" MDPS
  SG_ VS : 40|8@1+ (1,0) [0|255] "km/h" MDPS
  SG_ SWI_IGK : 48|1@0+ (1,0) [0|1] "" XXX
