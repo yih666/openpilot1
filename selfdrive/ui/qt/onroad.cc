@@ -880,7 +880,7 @@ void NvgWindow::drawBrake(QPainter &p) {
   int w = 1450;
   int h = 30;
   int x = (width() + (bdr_s*2))/2 - w/2 - bdr_s;
-  int y = 40 - bdr_s + 35;
+  int y = 40 - bdr_s + 45;
   
   if (brake_valid) {
     p.drawPixmap(x, y, w, h, ic_brake);
