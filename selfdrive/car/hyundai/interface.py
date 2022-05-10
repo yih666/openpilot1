@@ -57,11 +57,11 @@ class CarInterface(CarInterfaceBase):
     if Params().get("LateralControlSelect", encoding='utf8') == "0":
       ret.lateralTuning.pid.kf = 0.00006908923778520113
       ret.lateralTuning.pid.kpBP = [0., 10., 30.]
-      ret.lateralTuning.pid.kpV = [0.0135, 0.0337, 0.0515]
+      ret.lateralTuning.pid.kpV = [0.0133, 0.0333, 0.0503]
       ret.lateralTuning.pid.kiBP = [0., 30.]
       ret.lateralTuning.pid.kiV = [0.008, 0.01]
       ret.lateralTuning.pid.kdBP = [0., 30.]
-      ret.lateralTuning.pid.kdV = [0.6, 0.9]
+      ret.lateralTuning.pid.kdV = [0.6, 0.8]
       ret.lateralTuning.pid.newKfTuned = True
           
     # -------------INDI
@@ -102,7 +102,7 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.torque.deadzone = 0.0
 
     ret.steerActuatorDelay = 0.2
-    ret.steerRateCost = 0.4
+    ret.steerRateCost = 0.35
     ret.steerLimitTimer = 2.5
     ret.steerRatio = 16.0
 	
