@@ -444,8 +444,13 @@ VIPPanel::VIPPanel(QWidget* parent) : QWidget(parent) {
                                             "Display RADAR interface information on the onroad HUD.",
                                             "../assets/offroad/icon_shell.png"
                                             ));
+  layout->addWidget(new ParamControl("ShowSteerUI",
+                                            "STEER 정보 활성화 ",
+                                            "",
+                                            "../assets/offroad/icon_shell.png",
+                                            this));
   layout->addWidget(new ParamControl("ShowEngRPMUI",
-                                            "엔진RPM ",
+                                            "엔진RPM 활성화",
                                             "",
                                             "../assets/offroad/icon_shell.png",
                                             this));

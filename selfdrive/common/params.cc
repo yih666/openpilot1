@@ -208,6 +208,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"SoftRestartTriggered", CLEAR_ON_MANAGER_START},
     {"AutoSetOpt", PERSISTENT},
     {"SteerLockout", PERSISTENT},
+    {"ShowSteerUI", PERSISTENT},
     {"ShowEngRPMUI", PERSISTENT},
 };
 
