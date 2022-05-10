@@ -227,20 +227,20 @@ SetupWidget::SetupWidget(QWidget* parent) : QFrame(parent) {
   finishRegistationLayout->setContentsMargins(30, 75, 30, 45);
   finishRegistationLayout->setSpacing(0);
 
-  QLabel* registrationTitle = new QLabel("Lateral Setting");
+  QLabel* registrationTitle = new QLabel("Finish Setup");
   registrationTitle->setStyleSheet("font-size: 75px; font-weight: bold; margin-left: 55px;");
   finishRegistationLayout->addWidget(registrationTitle);
 
   finishRegistationLayout->addSpacing(30);
 
-  QLabel* registrationDescription = new QLabel("[PID]\n  SR(16.0) SRC(0.4)\n  SAD(0.09) \n[TORQUE]\n  UNTESTED");
+  QLabel* registrationDescription = new QLabel("Pair your device with comma connect (connect.comma.ai) and claim your comma prime offer.");
   registrationDescription->setWordWrap(true);
-  registrationDescription->setStyleSheet("font-size: 45px; font-weight: light; margin-left: 55px;");
+  registrationDescription->setStyleSheet("font-size: 55px; font-weight: light; margin-left: 55px;");
   finishRegistationLayout->addWidget(registrationDescription);
 
   finishRegistationLayout->addStretch();
 
-  QPushButton* pair = new QPushButton("GENESIS_0814");
+  QPushButton* pair = new QPushButton("BIG MODEL");
   pair->setFixedHeight(220);
   pair->setStyleSheet(R"(
     QPushButton {

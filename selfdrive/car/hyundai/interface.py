@@ -3,8 +3,10 @@ from typing import List
 
 from cereal import car
 from common.numpy_fast import interp
+from panda import Panda
 from common.conversions import Conversions as CV
 from selfdrive.car.hyundai.values import CAR, DBC, Buttons, CarControllerParams, FEATURES
+from selfdrive.car.hyundai.radar_interface import RADAR_START_ADDR
 from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint, get_safety_config
 from selfdrive.car.interfaces import CarInterfaceBase
 from common.params import Params
@@ -26,7 +28,7 @@ class CarInterface(CarInterfaceBase):
     v_current_kph = current_speed * CV.MS_TO_KPH
 
     gas_max_bp = [0., 10., 20., 30., 40., 50., 70., 90., 130.]
-    gas_max_v = [1.7, 1.62, 1.26, 1.03, 0.72, 0.56, 0.36, 0.30, 0.20]
+    gas_max_v = [1.7, 1.62, 1.26, 1.03, 0.72, 0.56, 0.36, 0.32, 0.20]
 
     return CarControllerParams.ACCEL_MIN, interp(v_current_kph, gas_max_bp, gas_max_v)
 
@@ -38,6 +40,7 @@ class CarInterface(CarInterfaceBase):
 
     ret.carName = "hyundai"
     ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.hyundaiLegacy, 0)]
+    ret.radarOffCan = RADAR_START_ADDR not in fingerprint[1] or DBC[ret.carFingerprint]["radar"] is None
 
     tire_stiffness_factor = 0.85
     if Params().get_bool('SteerLockout'):
@@ -47,18 +50,18 @@ class CarInterface(CarInterfaceBase):
 	
     ret.steerFaultMaxAngle = 85
     ret.steerFaultMaxFrames = 90
-
+	
     ret.disableLateralLiveTuning = False
 
     # -------------PID
     if Params().get("LateralControlSelect", encoding='utf8') == "0":
       ret.lateralTuning.pid.kf = 0.00006908923778520113
       ret.lateralTuning.pid.kpBP = [0., 10., 30.]
-      ret.lateralTuning.pid.kpV = [0.015, 0.035, 0.048]
+      ret.lateralTuning.pid.kpV = [0.0135, 0.0337, 0.0515]
       ret.lateralTuning.pid.kiBP = [0., 30.]
-      ret.lateralTuning.pid.kiV = [0.005, 0.01]
+      ret.lateralTuning.pid.kiV = [0.008, 0.01]
       ret.lateralTuning.pid.kdBP = [0., 30.]
-      ret.lateralTuning.pid.kdV = [0.8, 1.2]
+      ret.lateralTuning.pid.kdV = [0.6, 0.9]
       ret.lateralTuning.pid.newKfTuned = True
           
     # -------------INDI
@@ -84,21 +87,21 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.lqr.c = [1., 0.]
       ret.lateralTuning.lqr.k = [-110, 451]
       ret.lateralTuning.lqr.l = [0.33, 0.318]
-
+    
     # --------------Torque
     elif Params().get("LateralControlSelect", encoding='utf8') == "3":
       ret.lateralTuning.init('torque')
       ret.lateralTuning.torque.useSteeringAngle = True
-      max_lat_accel = 2.2
+      max_lat_accel = 2.4
       ret.lateralTuning.torque.kp = 1.0 / max_lat_accel
       ret.lateralTuning.torque.kf = 1.0 / max_lat_accel
-      ret.lateralTuning.torque.ki = 0.25 / max_lat_accel
+      ret.lateralTuning.torque.ki = 0.1 / max_lat_accel
       ret.lateralTuning.torque.friction = 0.01
 
       ret.lateralTuning.torque.kd = 0.0
       ret.lateralTuning.torque.deadzone = 0.0
 
-    ret.steerActuatorDelay = 0.09
+    ret.steerActuatorDelay = 0.2
     ret.steerRateCost = 0.4
     ret.steerLimitTimer = 2.5
     ret.steerRatio = 16.0
@@ -110,9 +113,9 @@ class CarInterface(CarInterfaceBase):
     ret.longitudinalTuning.kiV = [0.005, 0.06, 0.01]
     #ret.longitudinalTuning.kf = 0.9
     ret.longitudinalActuatorDelayLowerBound = 0.3
-    ret.longitudinalActuatorDelayUpperBound = 0.35
+    ret.longitudinalActuatorDelayUpperBound = 0.45
 
-    ret.stopAccel = -0.1
+    ret.stopAccel = 0.0
     ret.stoppingDecelRate = 0.2  # brake_travel/s while trying to stop
     ret.vEgoStopping = 0.55
     ret.vEgoStarting = 0.55  # needs to be >= vEgoStopping to avoid state transition oscillation
@@ -122,6 +125,21 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 1960. + STD_CARGO_KG
       ret.wheelbase = 3.01
       ret.centerToFront = ret.wheelbase * 0.4
+
+      ret.steerRatio = 16.0
+      ret.steerActuatorDelay = 0.2
+      ret.steerRateCost = 0.4
+	
+      if ret.lateralTuning.which() == 'pid':
+        ret.lateralTuning.pid.kf = 0.00006908923778520113
+        ret.lateralTuning.pid.kpBP = [0., 10., 30.]
+        ret.lateralTuning.pid.kpV = [0.0133, 0.0333, 0.0503]
+        ret.lateralTuning.pid.kiBP = [0., 30.]
+        ret.lateralTuning.pid.kiV = [0.008, 0.01]
+        ret.lateralTuning.pid.kdBP = [0., 30.]
+        ret.lateralTuning.pid.kdV = [0.6, 0.8]
+        ret.lateralTuning.pid.newKfTuned = True
+	
     elif candidate == CAR.GENESIS_G70:
       ret.mass = 1640. + STD_CARGO_KG
       ret.wheelbase = 2.84
@@ -134,6 +152,19 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 2200
       ret.wheelbase = 3.15
       ret.centerToFront = ret.wheelbase * 0.4
+      ret.steerRatio = 16.0
+      ret.steerActuatorDelay = 0.075
+      ret.steerRateCost = 0.4
+
+      if ret.lateralTuning.which() == 'torque':
+        ret.lateralTuning.torque.useSteeringAngle = True
+        max_lat_accel = 2.5
+        ret.lateralTuning.torque.kp = 1.0 / max_lat_accel
+        ret.lateralTuning.torque.kf = 1.0 / max_lat_accel
+        ret.lateralTuning.torque.ki = 0.1 / max_lat_accel
+        ret.lateralTuning.torque.friction = 0.01
+        ret.lateralTuning.torque.kd = 0.0
+
     elif candidate == CAR.GENESIS_EQ900_L:
       ret.mass = 2290
       ret.wheelbase = 3.45
@@ -287,6 +318,18 @@ class CarInterface(CarInterfaceBase):
       ret.wheelbase = 3.15
       ret.centerToFront = ret.wheelbase * 0.4
       tire_stiffness_factor = 0.8
+
+      ret.steerRatio = 14.5
+      ret.steerRateCost = 0.4
+
+      if ret.lateralTuning.which() == 'torque':
+        ret.lateralTuning.torque.useSteeringAngle = True
+        max_lat_accel = 2.5
+        ret.lateralTuning.torque.kp = 1.0 / max_lat_accel
+        ret.lateralTuning.torque.kf = 1.0 / max_lat_accel
+        ret.lateralTuning.torque.ki = 0.1 / max_lat_accel
+        ret.lateralTuning.torque.friction = 0.01
+        ret.lateralTuning.torque.kd = 0.0
 
 
     ret.radarTimeStep = 0.05

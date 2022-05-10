@@ -420,25 +420,36 @@ VIPPanel::VIPPanel(QWidget* parent) : QWidget(parent) {
   QVBoxLayout *layout = new QVBoxLayout(this);
   layout->addWidget(new LabelControl("UI설정", ""));
   layout->addWidget(new ParamControl("ShowDebugUI",
-                                            "디버그 내용 보기",
+                                            "디버그 내용 활성화",
                                             "가감속 등 디버그 내용을 화면에 띄웁니다.",
                                             "../assets/offroad/icon_shell.png",
                                             this));
   layout->addWidget(new ParamControl("ShowCgearUI",
-                                            "주행기어단수 보기",
+                                            "주행기어단수 활성화",
                                             "기어레버 위치와 기어단수를 볼수 있습니다..",
                                             "../assets/offroad/icon_shell.png"
                                             ));
   layout->addWidget(new ParamControl("ShowBsdUI",
-                                            "후측방감지기 보기",
+                                            "후측방감지기 활성화",
                                             "후측방 감지기 이미지를 볼수 있습니다..",
                                             "../assets/offroad/icon_shell.png"
                                             ));
   layout->addWidget(new ParamControl("ShowTpmsUI",
-                                            "타이어공기압 정보 보기",
+                                            "타이어공기압 정보 활성화",
                                             "타이어공기압 를 볼수 있습니다..",
                                             "../assets/offroad/icon_shell.png"
                                             ));
+  layout->addWidget(new ParamControl("DisplayRadarInfo",
+                                            "RADAR 정보 활성화",
+                                            "Display RADAR interface information on the onroad HUD.",
+                                            "../assets/offroad/icon_shell.png"
+                                            ));
+  layout->addWidget(new ParamControl("ShowEngRPMUI",
+                                            "엔진RPM ",
+                                            "",
+                                            "../assets/offroad/icon_shell.png",
+                                            this));
+  
   layout->addWidget(horizontal_line());
   layout->addWidget(new LabelControl("제어메뉴", ""));
   layout->addWidget(new LateralControlSelect());
@@ -448,13 +459,13 @@ VIPPanel::VIPPanel(QWidget* parent) : QWidget(parent) {
                                             "제네시스DH 90도이상 조향 오류발생시 비활성화.",
                                             "../assets/offroad/icon_road.png",
                                             this));
-  layout->addWidget(new ParamControl("AutoAscc",
-                                            "Ascc auto set",
-                                            "Ascc auto set 적용",
+  layout->addWidget(new ParamControl("AutoSetOpt",
+                                            "크루즈 오토 활성화",
+                                            "오토크루즈 셋 적용",
                                             "../assets/offroad/icon_road.png",
                                             this));											
   layout->addWidget(new ParamControl("KeepSteeringTurnSignals",
-                                            "상시조향 옵션.",
+                                            "상시조향 활성화",
                                             "방향지시등 작동시 상시조향 가능",
                                             "../assets/offroad/icon_openpilot.png",
                                             this));

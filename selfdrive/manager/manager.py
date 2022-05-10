@@ -63,10 +63,12 @@ def manager_init() -> None:
     ("HapticFeedbackWhenSpeedCamera", "1"),
     ("ShowBsdUI", "1"),
     ("ShowTpmsUI", "1"),
+    ("ShowEngRPMUI", "0"),
     ("DisableOpFcw", "0"),
     ("ShowDebugUI", "0"),
+    ("DisplayRadarInfo", "1"),
     ("NewRadarInterface", "0"),
-    ("AutoAscc", "1"),
+    ("AutoSetOpt", "1"),
     ("SteerLockout", "1"),
     ("PutPrebuilt", "0"), 
   ]

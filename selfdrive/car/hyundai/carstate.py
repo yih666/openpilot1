@@ -92,11 +92,11 @@ class CarState(CarStateBase):
 
     vEgoRawClu = cluSpeed * self.speed_conv_to_ms
     vEgoClu, aEgoClu = self.update_clu_speed_kf(vEgoRawClu)
-
+    
     vEgoRawWheel = (ret.wheelSpeeds.fl + ret.wheelSpeeds.fr + ret.wheelSpeeds.rl + ret.wheelSpeeds.rr) / 4.
     vEgoRawWheel = interp(vEgoRawWheel, [0., 10.], [(vEgoRawWheel + vEgoRawClu) / 2., vEgoRawWheel])
     vEgoWheel, aEgoWheel = self.update_speed_kf(vEgoRawWheel)
-
+    
     if self.use_cluster_speed:
       ret.vEgoRaw = vEgoRawClu
       ret.vEgo = vEgoClu
@@ -171,6 +171,7 @@ class CarState(CarStateBase):
     if not self.car_fingerprint in FEATURES["use_elect_gears"]:
     #if self.car_fingerprint in [CAR.GENESIS, CAR.GENESIS_EQ900, CAR.GENESIS_EQ900_L, CAR.K7]: 
       ret.currentGear = cp.vl["LVR11"]["CF_Lvr_CGear"]
+      ret.engRpm = cp.vl["EMS_366"]["Eng_RPM"]  # display rpm
 
     gear_disp2 = cp.vl["LVR11"] #["CF_Lvr_CGear"] 
     print(gear_disp2)
@@ -308,6 +309,7 @@ class CarState(CarStateBase):
 
       ("CF_Lvr_CGear", "LVR11"), 
       ("CF_Lvr_GearInf", "LVR11"), 
+      ("Eng_RPM", "EMS_366"),
 
       ("MainMode_ACC", "SCC11"),
       ("SCCInfoDisplay", "SCC11"),

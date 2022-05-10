@@ -1,3 +1,7 @@
+<<<<<<< HEAD
+=======
+
+>>>>>>> 3b5360040111c41cb8b670318d58d517841b75e6
 **This is based on xx979xx for Hyundai, Kia, Genesis.**
 
 https://github.com/xx979xx/openpilot

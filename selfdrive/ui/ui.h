@@ -81,7 +81,7 @@ typedef enum UIStatus {
 
 const QColor bg_colors [] = {
   [STATUS_DISENGAGED] =  QColor(0x80, 0x80, 0x80, 0xe6),
-  [STATUS_OVERRIDE] = QColor(0x1e, 0x90, 0xff, 0xf1),
+  [STATUS_OVERRIDE] = QColor(0x87, 0xce, 0xeb, 0x88),
   [STATUS_ENGAGED] = QColor(0x87, 0xce, 0xeb, 0x66),
   [STATUS_WARNING] = QColor(0x80, 0x80, 0x80, 0x0f),
   [STATUS_ALERT] = QColor(0xC9, 0x22, 0x31, 0x65),
@@ -101,6 +101,7 @@ typedef struct UIScene {
   bool steerOverride;
   float angleSteersDes;
   float cpuTempAvg;
+  bool enable_radar_state;
   
   cereal::PandaState::PandaType pandaType;
   
@@ -166,6 +167,7 @@ public:
   bool show_tpms = false;
   bool show_brake = false;
   bool show_lcr = false;
+  bool show_engrpm = false;
 
 signals:
   void uiUpdate(const UIState &s);
