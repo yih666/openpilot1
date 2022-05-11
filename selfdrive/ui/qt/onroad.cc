@@ -248,7 +248,7 @@ ButtonsWindow::ButtonsWindow(QWidget *parent) : QWidget(parent) {
       padding: 0px;
       border-width: 9px;
       border-style: solid;
-      background-color: rgba(75, 75, 75, 0.3);
+      background-color: rgba(0, 0, 0, 0.3);
     }
   )");
 }
@@ -622,9 +622,11 @@ void NvgWindow::drawCommunity(QPainter &p) {
   drawRestArea(p);
   drawTurnSignals(p);
   drawGpsStatus(p);
-  drawSteer(p);
   drawBrake(p);
   drawLcr(p);
+	
+  if(s->show_steer)
+    drawSteer(p);	
 	
   if(s->show_engrpm)
     drawEngRpm(p);
@@ -875,10 +877,10 @@ void NvgWindow::drawBrake(QPainter &p) {
   auto car_state = sm["carState"].getCarState();
   bool brake_valid = car_state.getBrakeLights();
 	
-  int w = 1500;
+  int w = 1450;
   int h = 30;
   int x = (width() + (bdr_s*2))/2 - w/2 - bdr_s;
-  int y = 40 - bdr_s + 30;
+  int y = 40 - bdr_s + 45;
   
   if (brake_valid) {
     p.drawPixmap(x, y, w, h, ic_brake);
@@ -964,9 +966,9 @@ void NvgWindow::drawSpeedLimit(QPainter &p) {
   if(activeNDA > 0)
   {
       int w = 180;
-      int h = 40;
-      int x = 30;
-      int y = 430;
+      int h = 35;
+      int x = (width() + (bdr_s*2))/2 - w/2 - bdr_s;
+      int y = bdr_s;
 
       p.setOpacity(1.f);
       p.drawPixmap(x, y, w, h, activeNDA == 1 ? ic_nda : ic_hda);
@@ -1041,10 +1043,6 @@ void NvgWindow::drawSpeedLimit(QPainter &p) {
 }
 
 void NvgWindow::drawSteer(QPainter &p) {
-
-  int x = 0;
-  int y = 590;
-
   const SubMaster &sm = *(uiState()->sm);
   auto car_state = sm["carState"].getCarState();
   auto car_control = sm["carControl"].getCarControl();
@@ -1055,20 +1053,55 @@ void NvgWindow::drawSteer(QPainter &p) {
   configFont(p, "Open Sans", 50, "Bold");
 
   QString str;
-  int width = 192;
-
+  
+  QRect rc(30, 430, 184, 130);
+  p.setPen(QPen(QColor(0xff, 0xff, 0xff, 100), 10));
+  p.setBrush(QColor(0, 0, 0, 100));
+  p.drawRoundedRect(rc, 20, 20);
+  p.setPen(Qt::NoPen);
+	
+  QColor textColor0 = QColor(255, 255, 255, 200);
+  QColor textColor1 = QColor(120, 255, 120, 200);
+  QColor textColor2 = QColor(255, 255, 0, 200);
+  QColor textColor3 = QColor(255, 0, 0, 200);
+	
   str.sprintf("%.0f°", steer_angle);
-  QRect rect = QRect(x, y, width, width);
-
-  p.setPen(QColor(255, 255, 255, 200));
-  p.drawText(rect, Qt::AlignCenter, str);
-
+  if (steer_angle > - 1 && steer_angle < 11) {
+   drawTextWithColor(p, rc.center().x(), rc.center().y(), str, textColor0);
+  } else if (steer_angle < 0 && steer_angle > - 11) {
+   drawTextWithColor(p, rc.center().x(), rc.center().y(), str, textColor0); 
+  } else if (steer_angle > 10 && steer_angle < 31) {
+   drawTextWithColor(p, rc.center().x(), rc.center().y(), str, textColor1); 	  
+  } else if (steer_angle < - 10 && steer_angle > - 31) {
+   drawTextWithColor(p, rc.center().x(), rc.center().y(), str, textColor1); 
+  } else if (steer_angle > 30 && steer_angle < 90) {
+   drawTextWithColor(p, rc.center().x(), rc.center().y(), str, textColor2); 	  
+  } else if (steer_angle < - 31 && steer_angle > - 90) {
+   drawTextWithColor(p, rc.center().x(), rc.center().y(), str, textColor2); 
+  } else if (steer_angle > 89) {
+   drawTextWithColor(p, rc.center().x(), rc.center().y(), str, textColor3); 	  
+  } else if (steer_angle < - 89) {
+   drawTextWithColor(p, rc.center().x(), rc.center().y(), str, textColor3);	  	  
+  }
+	
   str.sprintf("%.0f°", desire_angle);
-  rect.setRect(x, y + 80, width, width);
-
-  p.setPen(QColor(155, 255, 155, 200));
-  p.drawText(rect, Qt::AlignCenter, str);
-
+  if (desire_angle > - 1 && desire_angle < 11) {
+   drawTextWithColor(p, rc.center().x(), rc.center().y() + 50, str, textColor0);
+  } else if (desire_angle < 0 && desire_angle > - 11) {
+   drawTextWithColor(p, rc.center().x(), rc.center().y() + 50, str, textColor0); 
+  } else if (desire_angle > 10 && desire_angle < 31) {
+   drawTextWithColor(p, rc.center().x(), rc.center().y() + 50, str, textColor1); 	  
+  } else if (desire_angle < - 10 && desire_angle > - 31) {
+   drawTextWithColor(p, rc.center().x(), rc.center().y() + 50, str, textColor1); 
+  } else if (desire_angle > 30 && desire_angle < 90) {
+   drawTextWithColor(p, rc.center().x(), rc.center().y() + 50, str, textColor2); 	  
+  } else if (desire_angle < - 31 && desire_angle > - 90) {
+   drawTextWithColor(p, rc.center().x(), rc.center().y() + 50, str, textColor2); 
+  } else if (desire_angle > 89) {
+   drawTextWithColor(p, rc.center().x(), rc.center().y() + 50, str, textColor3); 	  
+  } else if (desire_angle < - 89) {
+   drawTextWithColor(p, rc.center().x(), rc.center().y() + 50, str, textColor3);	  	  
+  }
 }
 
 QPixmap NvgWindow::get_icon_iol_com(const char* key) {

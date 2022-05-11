@@ -168,6 +168,7 @@ public:
   bool show_brake = false;
   bool show_lcr = false;
   bool show_engrpm = false;
+  bool show_steer = false;
 
 signals:
   void uiUpdate(const UIState &s);

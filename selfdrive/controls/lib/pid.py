@@ -20,7 +20,7 @@ class PIDController():
     self.pos_limit = pos_limit
     self.neg_limit = neg_limit
 
-    self.i_unwind_rate = 3 / rate
+    self.i_unwind_rate = 0.3 / rate
     self.i_rate = 1.0 / rate
     self.speed = 0.0
 
