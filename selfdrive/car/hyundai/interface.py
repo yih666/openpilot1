@@ -42,7 +42,7 @@ class CarInterface(CarInterfaceBase):
     ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.hyundaiLegacy, 0)]
     ret.radarOffCan = RADAR_START_ADDR not in fingerprint[1] or DBC[ret.carFingerprint]["radar"] is None
 
-    tire_stiffness_factor = 0.85
+    tire_stiffness_factor = 1.0
     if Params().get_bool('SteerLockout'):
       ret.maxSteeringAngleDeg = 1000
     else:
@@ -55,14 +55,14 @@ class CarInterface(CarInterfaceBase):
 
     # -------------PID
     if Params().get("LateralControlSelect", encoding='utf8') == "0":
-      ret.lateralTuning.pid.kf = 0.00006908923778520113
+     ret.lateralTuning.pid.kf = 0.00007
       ret.lateralTuning.pid.kpBP = [0., 10., 30.]
       ret.lateralTuning.pid.kpV = [0.0132, 0.0333, 0.0503]
       ret.lateralTuning.pid.kiBP = [0., 30.]
-      ret.lateralTuning.pid.kiV = [0.008, 0.01]
+      ret.lateralTuning.pid.kiV = [0.006, 0.008]
       ret.lateralTuning.pid.kdBP = [0.]
       ret.lateralTuning.pid.kdV = [0.8]
-      ret.lateralTuning.pid.newKfTuned = True
+      ret.lateralTuning.pid.newKfTuned = True 
           
     # -------------INDI
     elif Params().get("LateralControlSelect", encoding='utf8') == "1":
@@ -102,44 +102,28 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.torque.deadzone = 0.0
 
     ret.steerActuatorDelay = 0.2
-    ret.steerRateCost = 0.4
+    ret.steerRateCost = 0.32
     ret.steerLimitTimer = 2.5
-    ret.steerRatio = 15.8
+    ret.steerRatio = 16.0
 	
     # longitudinal
-    ret.longitudinalTuning.kpBP = [0., 5.*CV.KPH_TO_MS, 10.*CV.KPH_TO_MS, 20.*CV.KPH_TO_MS, 30.*CV.KPH_TO_MS, 40.*CV.KPH_TO_MS, 50.*CV.KPH_TO_MS, 130.*CV.KPH_TO_MS]
-    ret.longitudinalTuning.kpV = [1.375, 1.215, 0.935, 0.905, 0.78, 0.58, 0.40, 0.36]
-    ret.longitudinalTuning.kiBP = [0., 20. * CV.KPH_TO_MS, 130. * CV.KPH_TO_MS]
-    ret.longitudinalTuning.kiV = [0.005, 0.06, 0.01]
-    #ret.longitudinalTuning.kf = 0.9
+    ret.longitudinalTuning.kpBP = [0., 5.*CV.KPH_TO_MS, 10.*CV.KPH_TO_MS, 30.*CV.KPH_TO_MS, 130.*CV.KPH_TO_MS]
+    ret.longitudinalTuning.kpV = [1.25, 1.1, 1.0, 0.93, 0.52]
+    ret.longitudinalTuning.kiBP = [0., 130. * CV.KPH_TO_MS]
+    ret.longitudinalTuning.kiV = [0.06, 0.05]
     ret.longitudinalActuatorDelayLowerBound = 0.3
-    ret.longitudinalActuatorDelayUpperBound = 0.45
+    ret.longitudinalActuatorDelayUpperBound = 0.3
 
     ret.stopAccel = 0.0
-    ret.stoppingDecelRate = 0.2  # brake_travel/s while trying to stop
-    ret.vEgoStopping = 0.55
-    ret.vEgoStarting = 0.55  # needs to be >= vEgoStopping to avoid state transition oscillation
+    ret.stoppingDecelRate = 0.3  # brake_travel/s while trying to stop
+    ret.vEgoStopping = 0.5
+    ret.vEgoStarting = 0.5  # needs to be >= vEgoStopping to avoid state transition oscillation
 
     # genesis
     if candidate == CAR.GENESIS:
       ret.mass = 1960. + STD_CARGO_KG
       ret.wheelbase = 3.01
       ret.centerToFront = ret.wheelbase * 0.4
-
-      ret.steerRatio = 15.8
-      ret.steerActuatorDelay = 0.2
-      ret.steerRateCost = 0.4
-	
-      if ret.lateralTuning.which() == 'pid':
-        ret.lateralTuning.pid.kf = 0.00006908923778520113
-        ret.lateralTuning.pid.kpBP = [0., 10., 30.]
-        ret.lateralTuning.pid.kpV = [0.0132, 0.0333, 0.0503]
-        ret.lateralTuning.pid.kiBP = [0., 30.]
-        ret.lateralTuning.pid.kiV = [0.008, 0.01]
-        ret.lateralTuning.pid.kdBP = [0.]
-        ret.lateralTuning.pid.kdV = [0.8]
-        ret.lateralTuning.pid.newKfTuned = True
-	
     elif candidate == CAR.GENESIS_G70:
       ret.mass = 1640. + STD_CARGO_KG
       ret.wheelbase = 2.84
