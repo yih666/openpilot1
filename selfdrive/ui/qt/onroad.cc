@@ -676,7 +676,7 @@ void NvgWindow::drawCommunity(QPainter &p) {
   int scc_bus = car_params.getSccBus();
 
   QString infoText;
-  infoText.sprintf(" %s  AO(%.2f/%.2f) SR(%.2f) SC(%.2f) SD(%.2f) (%d) (A%.2f/B%.2f/C%.2f)  CPU온도 %.1f°  BIG_0814",
+  infoText.sprintf(" %s  AO(%.2f/%.2f) SR(%.2f) SC(%.2f) SD(%.2f) (%d) (A%.2f/B%.2f/C%.2f)  CPU온도 %.1f° 0814",
 		      lateral_state[lateralControlState],
                       live_params.getAngleOffsetDeg(),
                       live_params.getAngleOffsetAverageDeg(),
@@ -692,7 +692,7 @@ void NvgWindow::drawCommunity(QPainter &p) {
                       );
 
   // info
-  configFont(p, "Open Sans", 34, "Regular");
+  configFont(p, "Open Sans", 36, "Bold");
   p.setPen(QColor(0xff, 0xff, 0xff, 0xff));
   p.drawText(rect().left() + 180, rect().height() - 15, infoText);	
   const int h = 60;
@@ -839,7 +839,7 @@ void NvgWindow::drawBottomIcons(QPainter &p) {
   else {
     str.sprintf("%d", (int)gap);
     textColor = QColor(120, 255, 120, 200);
-    textSize = 70.f;
+    textSize = 60.f;
   }
 
   configFont(p, "Open Sans", 35, "Bold");
@@ -1358,21 +1358,25 @@ void NvgWindow::drawCgear(QPainter &p) {
   configFont(p, "Open Sans", 150, "Bold");
 
   //shifter = 1;
-  p.setPen(QColor(255, 255, 255, 255)); 
-
-  int x_gear = 45;
-  int y_gear = 918;
+	
+  QRect rc(30, 600, 184, 180);
+  p.setPen(QPen(QColor(0xff, 0xff, 0xff, 100), 10));
+  p.setBrush(QColor(0, 0, 0, 100));
+  p.drawRoundedRect(rc, 20, 20);
+  p.setPen(Qt::NoPen);
+	
   if ((t_gear < 9) && (t_gear !=0)) { 
-    p.drawText(x_gear, y_gear, tgear);
+    p.setPen(QColor(255, 255, 255, 255)); 
+    p.drawText(rc.center().x() - 43, rc.center().y() + 55, tgear);
   } else if (t_gear == 14 ) { 
     p.setPen(QColor(201, 34, 49, 255));
-    p.drawText(x_gear, y_gear, "R");
+    p.drawText(rc.center().x() - 43, rc.center().y() + 55, "R");
   } else if (shifter == 1 ) { 
     p.setPen(QColor(255, 255, 255, 255));
-    p.drawText(x_gear, y_gear, "P");
+    p.drawText(rc.center().x() - 43, rc.center().y() + 55, "P");
   } else if (shifter == 3 ) {  
     p.setPen(QColor(255, 255, 255, 255));
-    p.drawText(x_gear, y_gear, "N");
+    p.drawText(rc.center().x() - 50, rc.center().y() + 55, "N");
   }
   // 1 "P"   2 "D"  3 "N" 4 "R"
 
