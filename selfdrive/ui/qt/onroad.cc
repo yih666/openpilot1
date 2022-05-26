@@ -646,7 +646,7 @@ void NvgWindow::drawCommunity(QPainter &p) {
   char str[1024];
   const auto car_state = sm["carState"].getCarState();
   const auto controls_state = sm["controlsState"].getControlsState();
-  const auto car_params = sm["carParams"].getCarParams();
+  //const auto car_params = sm["carParams"].getCarParams();
   const auto live_params = sm["liveParameters"].getLiveParameters();
   const auto device_state = sm["deviceState"].getDeviceState();
 	
@@ -673,10 +673,10 @@ void NvgWindow::drawCommunity(QPainter &p) {
   //bool is_cruise_set = (cruiseMaxSpeed > 0 && cruiseMaxSpeed < 255);
 
   //int mdps_bus = car_params.getMdpsBus();
-  int scc_bus = car_params.getSccBus();
+  //int scc_bus = car_params.getSccBus();
 
   QString infoText;
-  infoText.sprintf(" %s  AO(%.2f/%.2f) SR(%.2f) SC(%.2f) SD(%.2f) (%d) (A%.2f/B%.2f/C%.2f)  CPU온도 %.1f° 0814",
+  infoText.sprintf(" %s  AO(%.2f/%.2f) SR(%.2f) SC(%.2f) SD(%.2f) (A%.2f/B%.2f/C%.2f)  CPU온도 %.1f° ",
 		      lateral_state[lateralControlState],
                       live_params.getAngleOffsetDeg(),
                       live_params.getAngleOffsetAverageDeg(),
@@ -684,7 +684,7 @@ void NvgWindow::drawCommunity(QPainter &p) {
                       controls_state.getSteerRateCost(),
                       controls_state.getSteerActuatorDelay(),
                       //mdps_bus, 
-		      scc_bus,
+		      //scc_bus,
                       controls_state.getSccGasFactor(),
                       controls_state.getSccBrakeFactor(),
                       controls_state.getSccCurvatureFactor(),
