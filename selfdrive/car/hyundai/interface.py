@@ -28,7 +28,7 @@ class CarInterface(CarInterfaceBase):
     v_current_kph = current_speed * CV.MS_TO_KPH
 
     gas_max_bp = [0., 10., 20., 30., 40., 50., 70., 90., 130.]
-    gas_max_v = [1.685, 1.615, 1.24, 1.03, 0.71, 0.55, 0.365, 0.325, 0.20]
+    gas_max_v = [1.61, 1.59, 1.29, 1.03, 0.7, 0.53, 0.36, 0.32, 0.20]
 
     return CarControllerParams.ACCEL_MIN, interp(v_current_kph, gas_max_bp, gas_max_v)
 
@@ -42,7 +42,7 @@ class CarInterface(CarInterfaceBase):
     ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.hyundaiLegacy, 0)]
     ret.radarOffCan = RADAR_START_ADDR not in fingerprint[1] or DBC[ret.carFingerprint]["radar"] is None
 
-    tire_stiffness_factor = 1.0
+    tire_stiffness_factor = 0.85
     if Params().get_bool('SteerLockout'):
       ret.maxSteeringAngleDeg = 1000
     else:
@@ -55,13 +55,13 @@ class CarInterface(CarInterfaceBase):
 
     # -------------PID
     if Params().get("LateralControlSelect", encoding='utf8') == "0":
-      ret.lateralTuning.pid.kf = 0.000055
+      ret.lateralTuning.pid.kf = 0.00006
       ret.lateralTuning.pid.kpBP = [0., 10., 30.]
-      ret.lateralTuning.pid.kpV = [0.02, 0.04, 0.065]
+      ret.lateralTuning.pid.kpV = [0.019, 0.039, 0.059]
       ret.lateralTuning.pid.kiBP = [0., 30.]
-      ret.lateralTuning.pid.kiV = [0.006, 0.009]
+      ret.lateralTuning.pid.kiV = [0.005, 0.008]
       ret.lateralTuning.pid.kdBP = [0.]
-      ret.lateralTuning.pid.kdV = [0.8]
+      ret.lateralTuning.pid.kdV = [0.77]
       ret.lateralTuning.pid.newKfTuned = True
           
     # -------------INDI
@@ -101,21 +101,21 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.torque.kd = 0.02
       ret.lateralTuning.torque.deadzone = 0.001
 
-    ret.steerActuatorDelay = 0.2
+    ret.steerActuatorDelay = 0.3
     ret.steerRateCost = 0.35
     ret.steerLimitTimer = 2.5
-    ret.steerRatio = 16.2
+    ret.steerRatio = 15.8
 	
     # longitudinal
     ret.longitudinalTuning.kpBP = [0.*CV.KPH_TO_MS, 10.*CV.KPH_TO_MS, 20.*CV.KPH_TO_MS, 30.*CV.KPH_TO_MS, 70.*CV.KPH_TO_MS, 130.*CV.KPH_TO_MS]
-    ret.longitudinalTuning.kpV = [1.2, 1.1, 0.8, 0.7, 0.55, 0.35]
+    ret.longitudinalTuning.kpV = [1.15, 1.05, 0.8, 0.7, 0.55, 0.35]
     ret.longitudinalTuning.kiBP = [0., 130. * CV.KPH_TO_MS]
     ret.longitudinalTuning.kiV = [0.06, 0.05]
     #ret.longitudinalTuning.kf = 0.92
     ret.longitudinalActuatorDelayLowerBound = 0.3
-    ret.longitudinalActuatorDelayUpperBound = 0.4
+    ret.longitudinalActuatorDelayUpperBound = 0.34
 
-    ret.stopAccel = -0.5
+    ret.stopAccel = 0.0
     ret.stoppingDecelRate = 0.18  # brake_travel/s while trying to stop
     ret.vEgoStopping = 0.5
     ret.vEgoStarting = 0.5
