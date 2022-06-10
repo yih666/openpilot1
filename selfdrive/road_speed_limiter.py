@@ -284,7 +284,7 @@ def main():
           pass
 
         roadLimitSpeed.send(dat.to_bytes())
-        server.send_sdp(sock)
+        server.send_sdp(sock)   
         server.check()
 
     except Exception as e:
